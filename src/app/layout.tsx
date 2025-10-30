@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
+
+import BottomNav from "@/components/BottomeNav";
+
+const inter = Inter({ subsets: ['latin'] });
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,11 +27,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
+    <html lang="ko">
+      <body className={inter.className}>
+        
+        {/* 2. ⭐️ {children}이 실제 페이지 내용입니다. */}
+        {/* 'pb-16' (padding-bottom: 16)을 추가합니다.
+          이유: 하단 탭 메뉴의 높이가 h-16(4rem)이므로,
+          페이지 '내용'의 맨 아랫부분이 탭 메뉴에 가려지지 않게
+          아래쪽에 여백을 줍니다. (필수!)
+        */}
+        <main className="pb-16">
+          {children}
+        </main>
+
+        {/* 3. ⭐️ 여기에 <BottomNav />를 추가합니다. */}
+        {/* {children} (내용)이 나온 '다음'에 탭 메뉴가 나옵니다. */}
+        <BottomNav />
+        
       </body>
     </html>
   );
