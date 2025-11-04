@@ -20,11 +20,11 @@ export const metadata: Metadata = {
   title: "오늘:하루",
   description: "Daily의 Emotion을 Face으로 record하다",
   openGraph: {
-    title: '오늘하루 | 당신의 하루를 기록하세요',
-    description: '오늘하루(Today-Haru)는 일상을 기록하고 공유하는 서비스입니다.',
+    title: '오늘:하루',
+    description: 'Daily의 Emotion을 Face으로 record하다',
     images: [
       {
-        url: 'https://oss-frontend-red.vercel.app/og-image.png', 
+        url: 'https://oss-frontend-red.vercel.app/logo.png', 
         width: 800,
         height: 800,
         alt: '오늘하루 프로젝트 로고',
