@@ -2,6 +2,10 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 
+// 구글 로그인
+import { GoogleOAuthProvider } from "@react-oauth/google";
+import { AuthProvider } from "@/components/AuthContext";
+
 import BottomNav from "@/components/BottomeNav";
 
 const inter = Inter({ subsets: ['latin'] });
@@ -35,6 +39,9 @@ export const metadata: Metadata = {
   },
 };
 
+// Google Client ID 환경 변수
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -50,14 +57,14 @@ export default function RootLayout({
           페이지 '내용'의 맨 아랫부분이 탭 메뉴에 가려지지 않게
           아래쪽에 여백을 줍니다. (필수!)
         */}
-        <main className="pb-16">
-          {children}
-        </main>
-
-        {/* 3. ⭐️ 여기에 <BottomNav />를 추가합니다. */}
-        {/* {children} (내용)이 나온 '다음'에 탭 메뉴가 나옵니다. */}
-        <BottomNav />
-        
+        <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+          <AuthProvider>
+            <main className="pb-16">
+             {children}
+            </main>
+            <BottomNav />
+          </AuthProvider>
+        </GoogleOAuthProvider>
       </body>
     </html>
   );
