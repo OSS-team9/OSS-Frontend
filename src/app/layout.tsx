@@ -6,7 +6,7 @@ import "./globals.css";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { AuthProvider } from "@/components/AuthContext";
 
-import BottomNav from "@/components/BottomeNav";
+import ClientLayout from "@/components/ClientLayout";
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -50,19 +50,11 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className={inter.className}>
-        
-        {/* 2. ⭐️ {children}이 실제 페이지 내용입니다. */}
-        {/* 'pb-16' (padding-bottom: 16)을 추가합니다.
-          이유: 하단 탭 메뉴의 높이가 h-16(4rem)이므로,
-          페이지 '내용'의 맨 아랫부분이 탭 메뉴에 가려지지 않게
-          아래쪽에 여백을 줍니다. (필수!)
-        */}
         <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
           <AuthProvider>
-            <main className="pb-16">
-             {children}
-            </main>
-            <BottomNav />
+            <ClientLayout>
+              {children} 
+            </ClientLayout>
           </AuthProvider>
         </GoogleOAuthProvider>
       </body>
