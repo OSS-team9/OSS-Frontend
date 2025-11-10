@@ -1,10 +1,8 @@
-// app/mypage/page.tsx
 "use client";
 
 import { useState } from 'react';
-// 1. ⭐️ Google 로그인 버튼과, 우리가 만든 'useAuth' 훅을 가져옵니다.
 import { GoogleLogin } from '@react-oauth/google';
-import { useAuth } from "@/components/AuthContext"; // (경로 주의!)
+import { useAuth } from "@/components/AuthContext";
 
 export default function MyPage() {
   // 2. ⭐️ 전역 저장소(AuthContext)에서 'token'과 'login/logout' 함수를 가져옴
@@ -23,8 +21,6 @@ export default function MyPage() {
 
     // 5. 구글이 준 1회용 토큰(google_token)
     const googleToken = credentialResponse.credential;
-
-    console.log("토큰", googleToken);
     
     if (!googleToken) {
       setError("구글 토큰을 받지 못했습니다.");
