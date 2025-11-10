@@ -37,7 +37,7 @@ export default function AppBar({ onMenuToggle }: AppBarProps) {
           </svg>
         </button>
 
-        <h1 className={`text-base text-black ${lotteFont.className} ml-4 m-0 pt-1`}>
+        <h1 className={`text-base text-black ${lotteFont.className} ml-4`}>
             오늘:하루
         </h1>
         
