@@ -16,7 +16,7 @@ import {
 
 export default function BottomNav() {
   const pathname = usePathname(); // 훅을 사용해 현재 URL 경로를 가져옵니다. (예: "/")
-  const iconWrapperStyle = "flex items-center justify-center w-12 h-12 bg-app-bg rounded-full";
+  const iconWrapperStyle = "flex items-center justify-center w-10 h-10 bg-app-bg rounded-2xl";
   const iconStyle = "w-7 h-7";
   return (
     <nav className="fixed bottom-0 left-0 right-0 h-16 bg-app-bg-secondary">
