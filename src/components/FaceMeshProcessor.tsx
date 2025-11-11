@@ -125,11 +125,11 @@ export default function FaceMeshProcessor({
         )}
       </div>
       {/* '다시 찍기' 버튼 (모델 로드가 완료된 후에만 표시) */}
-      <div className="bg-app-bg-secondary">
+      <div className="flex justify-center mt-4 space-x-4 pb-1">
         {faceLandmarker && (
           <button
             onClick={onRetake}
-            className="w-full px-6 py-3 mt-4 bg-white text-black 
+            className="w-80 px-6 py-3 bg-white text-black 
                      rounded-full hover:bg-gray-100 "
           >
             다시 촬영 / 선택

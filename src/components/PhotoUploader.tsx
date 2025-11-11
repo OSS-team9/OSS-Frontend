@@ -25,7 +25,7 @@ export default function PhotoUploader({ onCapture }: PhotoUploaderProps) {
   };
 
   return (
-    <div className="w-full max-w-md py-6 mx-auto bg-app-bg-secondary">
+    <div className="w-full py-6 mx-auto bg-app-bg-secondary">
       <div className="text-center mx-4">
         {/* 5. ⭐️ <label>을 사용해 못생긴 <input> 버튼을 꾸밉니다. */}
         <label
