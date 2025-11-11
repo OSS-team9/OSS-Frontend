@@ -11,17 +11,17 @@ import ClientLayout from "@/components/ClientLayout";
 const pretendard = localFont({
   src: [
     {
-      path: "../../public/fonts/Pretendard-Regular.woff2", // 👈 기본 굵기 (400)
+      path: "../../public/fonts/Pretendard-Regular.woff2",
       weight: "400",
       style: "normal",
     },
     {
-      path: "../../public/fonts/Pretendard-SemiBold.woff2", // 👈 강조 굵기 (600)
+      path: "../../public/fonts/Pretendard-SemiBold.woff2",
       weight: "600",
       style: "normal",
     },
   ],
-  variable: "--font-pretendard", // 3. ⭐️ CSS 변수로 '--font-pretendard'를 지정
+  variable: "--font-pretendard",
   display: "swap",
 });
 
