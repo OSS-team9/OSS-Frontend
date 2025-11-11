@@ -1,4 +1,3 @@
-// components/WebCamera.tsx
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -8,13 +7,13 @@ interface WebCameraProps {
 }
 
 export default function WebCamera({ onCapture }: WebCameraProps) {
-  // 1. ⭐️ 현재 카메라의 방향 (기본값: "user" = 전면 카메라)
+  // 현재 카메라의 방향 (기본값: "user" = 전면 카메라)
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
   const [isCameraOn, setIsCameraOn] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // 2. ⭐️ 카메라를 시작/전환하는 핵심 함수
+  // 카메라를 시작/전환하는 핵심 함수
   const startCamera = async (newFacingMode?: "user" | "environment") => {
     // 이미 카메라가 켜져있다면, 먼저 끄고 시작합니다.
     if (isCameraOn) {
@@ -26,7 +25,7 @@ export default function WebCamera({ onCapture }: WebCameraProps) {
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: currentFacingMode }, // ⭐️ 여기에서 facingMode를 사용!
+        video: { facingMode: currentFacingMode }, // 여기에서 facingMode를 사용
       });
 
       if (videoRef.current) {
@@ -34,7 +33,7 @@ export default function WebCamera({ onCapture }: WebCameraProps) {
         videoRef.current.play();
       }
       setIsCameraOn(true);
-      setFacingMode(currentFacingMode); // ⭐️ 실제 적용된 facingMode를 state에 저장
+      setFacingMode(currentFacingMode); // 실제 적용된 facingMode를 state에 저장
     } catch (err) {
       console.error("카메라 접근 오류:", err);
       alert("카메라에 접근할 수 없습니다. 권한을 확인해주세요.");
@@ -42,7 +41,7 @@ export default function WebCamera({ onCapture }: WebCameraProps) {
     }
   };
 
-  // '카메라 중지' 함수 (이전과 동일)
+  // '카메라 중지' 함수
   const stopCamera = () => {
     const stream = videoRef.current?.srcObject as MediaStream;
     if (stream) {
@@ -52,7 +51,7 @@ export default function WebCamera({ onCapture }: WebCameraProps) {
     setIsCameraOn(false);
   };
 
-  // '사진 찍기' 함수 (이전과 동일)
+  // '사진 찍기' 함수
   const takeSnapshot = () => {
     if (videoRef.current && canvasRef.current) {
       const video = videoRef.current;
@@ -67,14 +66,14 @@ export default function WebCamera({ onCapture }: WebCameraProps) {
     }
   };
 
-  // 3. ⭐️ 카메라 전환 함수
+  // 카메라 전환 함수
   const toggleFacingMode = () => {
     // 현재 facingMode가 "user"면 "environment"로, 아니면 "user"로 변경
     const newMode = facingMode === "user" ? "environment" : "user";
-    startCamera(newMode); // ⭐️ 새 모드로 카메라 시작
+    startCamera(newMode); // 새 모드로 카메라 시작
   };
 
-  // '컴포넌트 정리' 함수 (이전과 동일)
+  // '컴포넌트 정리' 함수
   useEffect(() => {
     return () => {
       if (isCameraOn) {
@@ -83,7 +82,6 @@ export default function WebCamera({ onCapture }: WebCameraProps) {
     };
   }, [isCameraOn]);
 
-  // JSX
   return (
     <div className="w-full p-4 bg-app-bg-secondary">
       <div className="w-full max-w-md p-2 mx-auto rounded-2xl bg-white">
@@ -129,9 +127,9 @@ export default function WebCamera({ onCapture }: WebCameraProps) {
             </button>
           </>
         ) : (
-          // 5. ⭐️ 카메라가 꺼져있을 때 '카메라 켜기' 버튼만 표시
+          // 카메라가 꺼져있을 때 '카메라 켜기' 버튼만 표시
           <button
-            onClick={() => startCamera()} // 기본 facingMode("user")로 시작
+            onClick={() => startCamera()}
             className="w-80 py-3 px-6 text-black bg-white rounded-full hover:bg-gray-100"
           >
             카메라 켜기
