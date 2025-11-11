@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
 // 구글 로그인
@@ -8,34 +8,39 @@ import { AuthProvider } from "@/components/AuthContext";
 
 import ClientLayout from "@/components/ClientLayout";
 
-const inter = Inter({ subsets: ['latin'] });
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const pretendard = localFont({
+  src: [
+    {
+      path: "../../public/fonts/Pretendard-Regular.woff2", // 👈 기본 굵기 (400)
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/Pretendard-SemiBold.woff2", // 👈 강조 굵기 (600)
+      weight: "600",
+      style: "normal",
+    },
+  ],
+  variable: "--font-pretendard", // 3. ⭐️ CSS 변수로 '--font-pretendard'를 지정
+  display: "swap",
 });
 
 export const metadata: Metadata = {
   title: "오늘:하루",
   description: "Daily의 Emotion을 Face으로 record하다",
   openGraph: {
-    title: '오늘:하루',
-    description: 'Daily의 Emotion을 Face으로 record하다',
+    title: "오늘:하루",
+    description: "Daily의 Emotion을 Face으로 record하다",
     images: [
       {
-        url: 'https://oss-frontend-red.vercel.app/logo.png', 
+        url: "https://oss-frontend-red.vercel.app/logo.png",
         width: 800,
         height: 800,
-        alt: '오늘하루 프로젝트 로고',
+        alt: "오늘하루 프로젝트 로고",
       },
     ],
-    url: 'https://oss-frontend-red.vercel.app',
-    type: 'website',
+    url: "https://oss-frontend-red.vercel.app",
+    type: "website",
   },
 };
 
@@ -48,13 +53,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko">
-      <body className={inter.className}>
+    <html lang="ko" className={pretendard.variable}>
+      <body className={pretendard.className}>
         <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
           <AuthProvider>
-            <ClientLayout>
-              {children} 
-            </ClientLayout>
+            <ClientLayout>{children}</ClientLayout>
           </AuthProvider>
         </GoogleOAuthProvider>
       </body>

@@ -3,6 +3,7 @@
 @theme {
   --color-app-bg: #eadcc7;
   --color-app-bg-secondary: #a18958;
+  --font-sans: var(--font-pretendard);
 }
 
 :root {
