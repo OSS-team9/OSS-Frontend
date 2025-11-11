@@ -1,7 +1,7 @@
 // components/WebCamera.tsx
 "use client";
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from "react";
 
 interface WebCameraProps {
   onCapture: (imageSrc: string) => void;
@@ -85,56 +85,58 @@ export default function WebCamera({ onCapture }: WebCameraProps) {
 
   // JSX
   return (
-    <div className="w-full max-w-md p-4 mx-auto mt-5 border rounded-lg shadow-md bg-white">
-      <canvas ref={canvasRef} className="hidden" />
+    <div className="w-full p-4 bg-app-bg-secondary">
+      <div className="w-full max-w-md p-2 mx-auto rounded-2xl bg-white">
+        <canvas ref={canvasRef} className="hidden" />
 
-      <div className="relative">
-        <video
-          ref={videoRef}
-          className={`w-full rounded-lg ${!isCameraOn ? "hidden" : ""}`}
-          autoPlay
-          playsInline
-          muted
-        />
-        {!isCameraOn && (
-          <div className="flex items-center justify-center w-full h-64 bg-gray-200 rounded-lg">
-            <span className="text-gray-500">카메라가 꺼져있습니다.</span>
-          </div>
-        )}
-
-        <div className="flex justify-center mt-4 space-x-4">
-          {isCameraOn ? (
-            // 4. ⭐️ 카메라가 켜져있을 때 '사진 찍기'와 '전환' 버튼 표시
-            <>
-              <button
-                onClick={takeSnapshot}
-                className="px-4 py-2 font-bold text-white bg-blue-500 rounded-lg hover:bg-blue-600 flex-1"
-              >
-                사진 찍기
-              </button>
-              <button
-                onClick={toggleFacingMode} // ⭐️ 전환 버튼
-                className="px-4 py-2 font-bold text-white bg-gray-500 rounded-lg hover:bg-gray-600"
-              >
-                {facingMode === "user" ? "후면 전환 🔄" : "전면 전환 🔄"}
-              </button>
-              <button
-                onClick={stopCamera}
-                className="px-4 py-2 font-bold text-white bg-red-500 rounded-lg hover:bg-red-600 flex-1"
-              >
-                중지
-              </button>
-            </>
-          ) : (
-            // 5. ⭐️ 카메라가 꺼져있을 때 '카메라 켜기' 버튼만 표시
-            <button
-              onClick={() => startCamera()} // 기본 facingMode("user")로 시작
-              className="w-full px-4 py-2 font-bold text-white bg-green-500 rounded-lg hover:bg-green-600"
-            >
-              카메라 켜기
-            </button>
+        <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden">
+          <video
+            ref={videoRef}
+            className={`w-full h-full absolute top-0 left-0 ${
+              !isCameraOn ? "hidden" : ""
+            }`}
+            autoPlay
+            playsInline
+            muted
+          />
+          {!isCameraOn && (
+            <div className="flex items-center justify-center w-full h-full absolute top-0 left-0 bg-gray-200">
+              <span className="text-gray-500">카메라가 꺼져있습니다.</span>
+            </div>
           )}
         </div>
+      </div>
+      <div className="flex justify-center mt-4 space-x-4 pb-1">
+        {isCameraOn ? (
+          <>
+            <button
+              onClick={toggleFacingMode}
+              className="px-4 py-3 text-black bg-white rounded-full hover:bg-gray-100 flex-1"
+            >
+              {facingMode === "user" ? "후면 전환" : "전면 전환"}
+            </button>
+            <button
+              onClick={takeSnapshot}
+              className="px-4 py-3 text-black bg-white rounded-full hover:bg-gray-100 flex-1"
+            >
+              사진 찍기
+            </button>
+            <button
+              onClick={stopCamera}
+              className="px-4 py-3 text-black bg-white rounded-full hover:bg-gray-100 flex-1"
+            >
+              중지
+            </button>
+          </>
+        ) : (
+          // 5. ⭐️ 카메라가 꺼져있을 때 '카메라 켜기' 버튼만 표시
+          <button
+            onClick={() => startCamera()} // 기본 facingMode("user")로 시작
+            className="w-80 py-3 px-6 text-black bg-white rounded-full hover:bg-gray-100"
+          >
+            카메라 켜기
+          </button>
+        )}
       </div>
     </div>
   );

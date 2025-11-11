@@ -1,7 +1,7 @@
 // components/PhotoUploader.tsx
 "use client";
 
-import { useState } from 'react';
+import { useState } from "react";
 
 // 1. ⭐️ WebCamera와 '똑같은' props 규격을 사용합니다.
 interface PhotoUploaderProps {
@@ -9,7 +9,6 @@ interface PhotoUploaderProps {
 }
 
 export default function PhotoUploader({ onCapture }: PhotoUploaderProps) {
-
   // 2. ⭐️ 파일이 선택되었을 때 실행될 함수
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -26,16 +25,18 @@ export default function PhotoUploader({ onCapture }: PhotoUploaderProps) {
   };
 
   return (
-    <div className="w-full max-w-md p-4 mx-auto mt-2 border rounded-lg shadow-md bg-white">
-      <div className="text-center">
+    <div className="w-full max-w-md py-6 mx-auto bg-app-bg-secondary">
+      <div className="text-center mx-4">
         {/* 5. ⭐️ <label>을 사용해 못생긴 <input> 버튼을 꾸밉니다. */}
         <label
           htmlFor="photo-upload"
-          className="cursor-pointer px-6 py-3 font-bold text-white bg-purple-500 rounded-lg hover:bg-purple-600 w-full inline-block"
+          className="cursor-pointer w-80 max-w-xs px-6 py-3 mx-auto 
+                     bg-white text-black 
+                     rounded-full hover:bg-gray-100 block"
         >
           갤러리에서 사진 선택
         </label>
-        
+
         {/* 6. ⭐️ 핵심: 'file' 타입의 <input> 태그 */}
         {/* (multiple, capture 속성이 없습니다!) */}
         <input

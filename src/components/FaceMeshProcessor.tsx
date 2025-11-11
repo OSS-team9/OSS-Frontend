@@ -1,11 +1,11 @@
 // components/FaceMeshProcessor.tsx
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from "react";
 import {
   FaceLandmarker,
   FilesetResolver,
-  DrawingUtils
+  DrawingUtils,
 } from "@mediapipe/tasks-vision";
 
 interface FaceMeshProcessorProps {
@@ -13,29 +13,37 @@ interface FaceMeshProcessorProps {
   onRetake: () => void;
 }
 
-export default function FaceMeshProcessor({ imageSrc, onRetake }: FaceMeshProcessorProps) {
-  const [faceLandmarker, setFaceLandmarker] = useState<FaceLandmarker | null>(null);
-  
+export default function FaceMeshProcessor({
+  imageSrc,
+  onRetake,
+}: FaceMeshProcessorProps) {
+  const [faceLandmarker, setFaceLandmarker] = useState<FaceLandmarker | null>(
+    null
+  );
+
   // ⭐️ 1. '얼굴 감지 실패' 상태를 저장할 state 추가
-  const [detectionFailed, setDetectionFailed] = useState(false); 
-  
+  const [detectionFailed, setDetectionFailed] = useState(false);
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  
+
   // 'AI 모델 로드' (이전과 동일)
   useEffect(() => {
     async function createLandmarker() {
       const filesetResolver = await FilesetResolver.forVisionTasks(
         "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
       );
-      const landmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
-        baseOptions: {
-          modelAssetPath: `/face_landmarker.task`,
-          delegate: "GPU"
-        },
-        outputFaceBlendshapes: true,
-        outputFacialTransformationMatrixes: true,
-        runningMode: "IMAGE"
-      });
+      const landmarker = await FaceLandmarker.createFromOptions(
+        filesetResolver,
+        {
+          baseOptions: {
+            modelAssetPath: `/face_landmarker.task`,
+            delegate: "GPU",
+          },
+          outputFaceBlendshapes: true,
+          outputFacialTransformationMatrixes: true,
+          runningMode: "IMAGE",
+        }
+      );
       setFaceLandmarker(landmarker);
       console.log("Face Landmarker 모델 로드 성공!");
     }
@@ -76,52 +84,58 @@ export default function FaceMeshProcessor({ imageSrc, onRetake }: FaceMeshProces
         // 8-2. 감지 성공 시 (이전과 동일)
         const drawingUtils = new DrawingUtils(ctx);
         for (const landmarks of results.faceLandmarks) {
-          drawingUtils.drawConnectors(landmarks, FaceLandmarker.FACE_LANDMARKS_TESSELATION, {
-            color: "#C0C0C070",
-            lineWidth: 0.5
-          });
+          drawingUtils.drawConnectors(
+            landmarks,
+            FaceLandmarker.FACE_LANDMARKS_TESSELATION,
+            {
+              color: "#C0C0C070",
+              lineWidth: 0.5,
+            }
+          );
         }
         console.log("FaceMesh 그리기 완료!");
       }
     };
-    
   }, [faceLandmarker, imageSrc]);
 
-  // JSX (수정됨)
+  /* TODO
+    이미지 비율 이상해지는거 해결
+  */
   return (
-    <div className="w-full max-w-md p-4 mx-auto mt-5 border rounded-lg shadow-md bg-white">
-      {/* 모델 로딩 중 메시지 */}
-      {!faceLandmarker && (
-        <div className="text-center p-4">
-          <p>AI 모델을 로드 중입니다...</p>
-        </div>
-      )}
+    <div className="w-full p-4 bg-app-bg-secondary">
+      <div className="w-full max-w-md p-2 mx-auto rounded-2xl bg-white">
+        {/* 모델 로딩 중 메시지 */}
+        {!faceLandmarker && (
+          <div className="text-center p-4">
+            <p>AI 모델을 로드 중입니다...</p>
+          </div>
+        )}
 
-      {/* FaceMesh가 그려질 캔버스 */}
-      <div className="mt-4 border-t pt-4">
-        <canvas
-          ref={canvasRef}
-          className="w-full h-auto"
-        />
+        {/* FaceMesh가 그려질 캔버스 */}
+        <div className="aspect-[3/4]">
+          <canvas ref={canvasRef} className="w-full h-full rounded-2xl" />
+        </div>
+
+        {/* ⭐️ 9. '감지 실패' 상태일 때만 에러 메시지를 보여줍니다. */}
+        {detectionFailed && (
+          <div className="text-center p-4 my-2 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+            <p className="font-bold">얼굴을 감지할 수 없습니다.</p>
+            <p className="text-sm">다른 사진으로 다시 시도해주세요.</p>
+          </div>
+        )}
       </div>
-
-      {/* ⭐️ 9. '감지 실패' 상태일 때만 에러 메시지를 보여줍니다. */}
-      {detectionFailed && (
-        <div className="text-center p-4 my-2 bg-red-100 border border-red-400 text-red-700 rounded-lg">
-          <p className="font-bold">얼굴을 감지할 수 없습니다.</p>
-          <p className="text-sm">다른 사진으로 다시 시도해주세요.</p>
-        </div>
-      )}
-
       {/* '다시 찍기' 버튼 (모델 로드가 완료된 후에만 표시) */}
-      {faceLandmarker && (
-        <button
-          onClick={onRetake}
-          className="w-full px-4 py-2 mt-4 font-bold text-white bg-green-500 rounded-lg hover:bg-green-600"
-        >
-          다시 촬영 / 선택
-        </button>
-      )}
+      <div className="bg-app-bg-secondary">
+        {faceLandmarker && (
+          <button
+            onClick={onRetake}
+            className="w-full px-6 py-3 mt-4 bg-white text-black 
+                     rounded-full hover:bg-gray-100 "
+          >
+            다시 촬영 / 선택
+          </button>
+        )}
+      </div>
     </div>
   );
 }

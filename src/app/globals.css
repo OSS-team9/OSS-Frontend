@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 @theme {
-  --color-app-bg: #EADCC7;
-  --color-app-bg-secondary: #A18958;
+  --color-app-bg: #eadcc7;
+  --color-app-bg-secondary: #a18958;
 }
 
 :root {
