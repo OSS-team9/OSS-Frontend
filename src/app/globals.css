@@ -2,6 +2,7 @@
 
 @theme {
   --color-app-bg: #EADCC7;
+  --color-app-bg-secondary: #A18958;
 }
 
 :root {
@@ -27,4 +28,8 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+html {
+  overflow-y: scroll;
 }
