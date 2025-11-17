@@ -26,26 +26,26 @@ const ICON_PLACEMENTS = [
   {
     id: "top",
     landmarkIndex: 10,
-    width: 120,
-    height: 120,
-    offsetX: -60,
-    offsetY: -150,
+    width: 432,
+    height: 432,
+    offsetX: -216,
+    offsetY: -540,
   },
   {
     id: "left",
     landmarkIndex: 127,
-    width: 100,
-    height: 100,
-    offsetX: -120,
-    offsetY: -50,
+    width: 360,
+    height: 360,
+    offsetX: -432,
+    offsetY: -180,
   },
   {
     id: "right",
     landmarkIndex: 356,
-    width: 90,
-    height: 90,
-    offsetX: 30,
-    offsetY: -45,
+    width: 324,
+    height: 324,
+    offsetX: 108,
+    offsetY: -162,
   },
 ];
 
@@ -149,8 +149,12 @@ export default function FaceMeshProcessor({
       await new Promise((resolve) => (iconToDraw.onload = resolve));
 
       // [5단계] ⭐️ 모든 준비 완료. 이제 '한 번에' 그리기 시작
-      canvas.width = canvas.clientWidth;
-      canvas.height = canvas.clientHeight;
+      const FIXED_WIDTH = 1440;
+      const FIXED_HEIGHT = 1920;
+
+      canvas.width = FIXED_WIDTH;
+      canvas.height = FIXED_HEIGHT;
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       // (1) 원본 이미지 그리기
@@ -171,15 +175,15 @@ export default function FaceMeshProcessor({
       ctx.drawImage(userImage, offsetX, offsetY, drawWidth, drawHeight);
 
       // (2) FaceMesh 그리기
-      // const drawingUtils = new DrawingUtils(ctx);
-      // drawingUtils.drawConnectors(
-      //   landmarks,
-      //   FaceLandmarker.FACE_LANDMARKS_TESSELATION,
-      //   {
-      //     color: "#C0C0C070",
-      //     lineWidth: 0.5,
-      //   }
-      // );
+      const drawingUtils = new DrawingUtils(ctx);
+      drawingUtils.drawConnectors(
+        landmarks,
+        FaceLandmarker.FACE_LANDMARKS_TESSELATION,
+        {
+          color: "#C0C0C070",
+          lineWidth: 0.5,
+        }
+      );
 
       // (3) 아이콘 그리기
       ICON_PLACEMENTS.forEach((placement) => {
