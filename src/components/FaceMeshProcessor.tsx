@@ -12,6 +12,65 @@ interface FaceMeshProcessorProps {
   onRetake: () => void;
 }
 
+const EMOTIONS = [
+  "joy",
+  "panic",
+  "anger",
+  "anxiety",
+  "hurt",
+  "sadness",
+  "neutral",
+];
+const ICON_PLACEMENTS = [
+  // ⭐️ id: 고유 식별자, landmarkIndex: 기준점(얼굴), width/height: 아이콘 크기(px), offsetX/Y: 기준점에서의 보정(px)
+  {
+    id: "top",
+    landmarkIndex: 10,
+    width: 120,
+    height: 120,
+    offsetX: -60,
+    offsetY: -150,
+  },
+  {
+    id: "left",
+    landmarkIndex: 127,
+    width: 100,
+    height: 100,
+    offsetX: -120,
+    offsetY: -50,
+  },
+  {
+    id: "right",
+    landmarkIndex: 356,
+    width: 90,
+    height: 90,
+    offsetX: 30,
+    offsetY: -45,
+  },
+];
+
+// ⭐️⭐️⭐️ AI 백엔드 통신 함수 (Best Practice) ⭐️⭐️⭐️
+// -----------------------------------------------------------------
+// TODO: 나중에 AI 백엔드가 완성되면, 이 함수 내부만 실제 API 호출(fetch)로 교체합니다.
+// -----------------------------------------------------------------
+async function getEmotionFromAI(
+  blendshapes: any[] // 👈 (Input) FaceMesh가 감지한 표정 데이터
+): Promise<{ emotion: string; level: number }> {
+  // (1) ⭐️ 실제 AI 백엔드 호출 코드
+
+  // (2) ⭐️ 현재 데모용 Mock 로직
+  // (0.5초 딜레이를 시뮬레이션하고, 랜덤 감정과 랜덤 레벨을 반환)
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
+  const randomEmotion = EMOTIONS[Math.floor(Math.random() * EMOTIONS.length)];
+  const randomLevel = Math.floor(Math.random() * 3) + 1; // 1, 2, 3 중 랜덤
+
+  console.log(
+    `[Mock AI Result] Emotion: ${randomEmotion}, Level: ${randomLevel}`
+  );
+  return { emotion: randomEmotion, level: randomLevel };
+}
+
 export default function FaceMeshProcessor({
   imageSrc,
   onRetake,
@@ -22,6 +81,8 @@ export default function FaceMeshProcessor({
 
   // '얼굴 감지 실패' 상태를 저장할 state 추가
   const [detectionFailed, setDetectionFailed] = useState(false);
+  // '얼굴 이미지 추가' 상태
+  const [isDrawingComplete, setIsDrawingComplete] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -49,51 +110,87 @@ export default function FaceMeshProcessor({
     createLandmarker();
   }, []);
 
-  // '얼굴 감지'
+  // 얼굴 감지 및 그리기
   useEffect(() => {
-    if (!faceLandmarker || !imageSrc || !canvasRef.current) {
-      return;
-    }
-
-    // 새로운 이미지가 들어오면, '감지 실패' 상태를 초기화
-    setDetectionFailed(false);
+    if (!faceLandmarker || !imageSrc || !canvasRef.current) return;
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const image = new Image();
-    image.src = imageSrc;
+    setIsDrawingComplete(false);
+    setDetectionFailed(false);
 
-    image.onload = () => {
-      canvas.width = image.naturalWidth;
-      canvas.height = image.naturalHeight;
+    const userImage = new Image();
+    userImage.src = imageSrc;
+    userImage.crossOrigin = "anonymous";
 
-      const results = faceLandmarker.detect(image);
-
-      // 캔버스에는 원본 이미지를 '항상' 먼저 그립니다.
-      ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-
-      // 감지된 얼굴이 있는지(length > 0) 확인합니다.
+    // 원본 이미지 + FaceMesh  그리기
+    userImage.onload = async () => {
+      // [1단계] ⭐️ FaceMesh 감지 (데이터 준비)
+      const results = faceLandmarker.detect(userImage);
       if (results.faceLandmarks.length === 0) {
-        // 감지 실패 시
-        console.warn("얼굴 감지 실패: landmarks 배열이 비어있습니다.");
-        setDetectionFailed(true); // '감지 실패' 상태로 설정
-      } else {
-        // 감지 성공 시
-        const drawingUtils = new DrawingUtils(ctx);
-        for (const landmarks of results.faceLandmarks) {
-          drawingUtils.drawConnectors(
-            landmarks,
-            FaceLandmarker.FACE_LANDMARKS_TESSELATION,
-            {
-              color: "#C0C0C070",
-              lineWidth: 0.5,
-            }
-          );
-        }
-        console.log("FaceMesh 그리기 완료!");
+        setDetectionFailed(true);
+        setIsDrawingComplete(true);
+        return;
       }
+
+      const landmarks = results.faceLandmarks[0];
+      const blendshapes = results.faceBlendshapes[0]?.categories || [];
+
+      // [2단계] ⭐️ AI 백엔드 통신 (Mock)
+      const aiResult = await getEmotionFromAI(blendshapes);
+
+      // [3단계] ⭐️ AI 결과에 맞는 '하나의' 아이콘 로드
+      const iconToDraw = new Image();
+      iconToDraw.src = `/emotions/${aiResult.emotion}_${aiResult.level}.png`;
+
+      // [4단계] ⭐️ 아이콘 로드 완료 대기
+      await new Promise((resolve) => (iconToDraw.onload = resolve));
+
+      // [5단계] ⭐️ 모든 준비 완료. 이제 '한 번에' 그리기 시작
+      canvas.width = canvas.clientWidth;
+      canvas.height = canvas.clientHeight;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // (1) 원본 이미지 그리기
+      const canvasRatio = canvas.width / canvas.height;
+      const imageRatio = userImage.naturalWidth / userImage.naturalHeight;
+      let drawWidth, drawHeight, offsetX, offsetY;
+      if (imageRatio > canvasRatio) {
+        drawHeight = canvas.height;
+        drawWidth = drawHeight * imageRatio;
+        offsetX = (canvas.width - drawWidth) / 2;
+        offsetY = 0;
+      } else {
+        drawWidth = canvas.width;
+        drawHeight = drawWidth / imageRatio;
+        offsetX = 0;
+        offsetY = (canvas.height - drawHeight) / 2;
+      }
+      ctx.drawImage(userImage, offsetX, offsetY, drawWidth, drawHeight);
+
+      // (2) FaceMesh 그리기
+      // const drawingUtils = new DrawingUtils(ctx);
+      // drawingUtils.drawConnectors(
+      //   landmarks,
+      //   FaceLandmarker.FACE_LANDMARKS_TESSELATION,
+      //   {
+      //     color: "#C0C0C070",
+      //     lineWidth: 0.5,
+      //   }
+      // );
+
+      // (3) 아이콘 그리기
+      ICON_PLACEMENTS.forEach((placement) => {
+        const landmark = landmarks[placement.landmarkIndex];
+        const x = landmark.x * canvas.width + placement.offsetX;
+        const y = landmark.y * canvas.height + placement.offsetY;
+        ctx.drawImage(iconToDraw, x, y, placement.width, placement.height);
+      });
+
+      // [7단계] ⭐️ 모든 그리기가 완료됨
+      setIsDrawingComplete(true);
     };
   }, [faceLandmarker, imageSrc]);
 
