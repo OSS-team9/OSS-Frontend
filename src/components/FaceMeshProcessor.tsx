@@ -158,36 +158,62 @@ export default function FaceMeshProcessor({
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       // (1) 원본 이미지 그리기
-      const canvasRatio = canvas.width / canvas.height;
-      const imageRatio = userImage.naturalWidth / userImage.naturalHeight;
-      let drawWidth, drawHeight, offsetX, offsetY;
-      if (imageRatio > canvasRatio) {
-        drawHeight = canvas.height;
-        drawWidth = drawHeight * imageRatio;
-        offsetX = (canvas.width - drawWidth) / 2;
-        offsetY = 0;
+      const canvasAspectRatio = canvas.width / canvas.height;
+      const imageAspectRatio = userImage.naturalWidth / userImage.naturalHeight;
+      let sx = 0,
+        sy = 0,
+        sWidth = userImage.naturalWidth,
+        sHeight = userImage.naturalHeight;
+
+      if (imageAspectRatio > canvasAspectRatio) {
+        sWidth = userImage.naturalHeight * canvasAspectRatio;
+        sx = (userImage.naturalWidth - sWidth) / 2;
       } else {
-        drawWidth = canvas.width;
-        drawHeight = drawWidth / imageRatio;
-        offsetX = 0;
-        offsetY = (canvas.height - drawHeight) / 2;
+        sHeight = userImage.naturalWidth / canvasAspectRatio;
+        sy = (userImage.naturalHeight - sHeight) / 2;
       }
-      ctx.drawImage(userImage, offsetX, offsetY, drawWidth, drawHeight);
+      ctx.drawImage(
+        userImage,
+        sx,
+        sy,
+        sWidth,
+        sHeight,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      );
+      const scaledLandmarks = landmarks.map((landmark) => {
+        // 1. 원본 이미지의 픽셀 좌표
+        const originalX = landmark.x * userImage.naturalWidth;
+        const originalY = landmark.y * userImage.naturalHeight;
+
+        // 2. 캔버스 픽셀 좌표로 변환 (잘라낸 영역(sx, sy)과 비율(sWidth) 고려)
+        const canvasX = ((originalX - sx) / sWidth) * canvas.width;
+        const canvasY = ((originalY - sy) / sHeight) * canvas.height;
+
+        // 3. DrawingUtils가 사용할 '캔버스 기준' 정규화 좌표로 다시 변환
+        return {
+          x: canvasX / canvas.width,
+          y: canvasY / canvas.height,
+          z: landmark.z,
+        };
+      });
 
       // (2) FaceMesh 그리기
-      const drawingUtils = new DrawingUtils(ctx);
-      drawingUtils.drawConnectors(
-        landmarks,
-        FaceLandmarker.FACE_LANDMARKS_TESSELATION,
-        {
-          color: "#C0C0C070",
-          lineWidth: 0.5,
-        }
-      );
+      // const drawingUtils = new DrawingUtils(ctx);
+      // drawingUtils.drawConnectors(
+      //   scaledLandmarks,
+      //   FaceLandmarker.FACE_LANDMARKS_TESSELATION,
+      //   {
+      //     color: "#FF00FF",
+      //     lineWidth: 0.5,
+      //   }
+      // );
 
       // (3) 아이콘 그리기
       ICON_PLACEMENTS.forEach((placement) => {
-        const landmark = landmarks[placement.landmarkIndex];
+        const landmark = scaledLandmarks[placement.landmarkIndex];
         const x = landmark.x * canvas.width + placement.offsetX;
         const y = landmark.y * canvas.height + placement.offsetY;
         ctx.drawImage(iconToDraw, x, y, placement.width, placement.height);
@@ -215,9 +241,6 @@ export default function FaceMeshProcessor({
     link.click();
   };
 
-  /* TODO
-    이미지 비율 이상해지는거 해결
-  */
   return (
     <div className="w-full h-full">
       <div className="w-full p-4 bg-app-bg-secondary">
