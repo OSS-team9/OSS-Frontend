@@ -194,44 +194,76 @@ export default function FaceMeshProcessor({
     };
   }, [faceLandmarker, imageSrc]);
 
+  // [다운로드 기능] 버튼 클릭 시 실행될 함수
+  const handleDownload = () => {
+    if (!canvasRef.current || !isDrawingComplete) return;
+
+    const canvas = canvasRef.current;
+    const dataUrl = canvas.toDataURL("image/png"); // 캔버스 내용을 PNG 데이터로 변환
+
+    const today = new Date().toISOString().split("T")[0];
+    const filename = `오늘_하루_${today}.png`;
+
+    // 가상 링크(<a>)를 만들어서 다운로드 실행
+    const link = document.createElement("a");
+    link.href = dataUrl;
+    link.download = filename; // 다운로드될 파일 이름
+    link.click();
+  };
+
   /* TODO
     이미지 비율 이상해지는거 해결
   */
   return (
-    <div className="w-full p-4 bg-app-bg-secondary">
-      <div className="w-full max-w-md p-2 mx-auto rounded-2xl bg-white">
-        {/* 모델 로딩 중 메시지 */}
-        {!faceLandmarker && (
-          <div className="text-center p-4">
-            <p>AI 모델을 로드 중입니다...</p>
-          </div>
-        )}
+    <div className="w-full h-full">
+      <div className="w-full p-4 bg-app-bg-secondary">
+        <div className="w-full max-w-md p-2 mx-auto rounded-2xl bg-white">
+          {/* 모델 로딩 중 메시지 */}
+          {!faceLandmarker && (
+            <div className="text-center p-4">
+              <p>AI 모델을 로드 중입니다...</p>
+            </div>
+          )}
 
-        {/* FaceMesh가 그려질 캔버스 */}
-        <div className="aspect-[3/4]">
-          <canvas ref={canvasRef} className="w-full h-full rounded-2xl" />
+          {/* FaceMesh가 그려질 캔버스 */}
+          <div className="aspect-[3/4]">
+            <canvas ref={canvasRef} className="w-full h-full rounded-2xl" />
+          </div>
+
+          {/* '감지 실패' 상태일 때만 에러 메시지 */}
+          {detectionFailed && (
+            <div className="text-center p-4 my-2 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+              <p className="font-bold">얼굴을 감지할 수 없습니다.</p>
+              <p className="text-sm">다른 사진으로 다시 시도해주세요.</p>
+            </div>
+          )}
         </div>
 
-        {/* '감지 실패' 상태일 때만 에러 메시지 */}
-        {detectionFailed && (
-          <div className="text-center p-4 my-2 bg-red-100 border border-red-400 text-red-700 rounded-lg">
-            <p className="font-bold">얼굴을 감지할 수 없습니다.</p>
-            <p className="text-sm">다른 사진으로 다시 시도해주세요.</p>
-          </div>
-        )}
-      </div>
-
-      {/* '다시 찍기' 버튼 (모델 로드가 완료된 후에만 표시) */}
-      <div className="flex justify-center mt-4 space-x-4 pb-1">
-        {faceLandmarker && (
-          <button
-            onClick={onRetake}
-            className="w-80 px-6 py-3 bg-white text-black 
+        {/* '다시 찍기' 버튼 (모델 로드가 완료된 후에만 표시) */}
+        <div className="flex justify-center mt-4 space-x-4 pb-1">
+          {faceLandmarker && (
+            <button
+              onClick={onRetake}
+              className="w-80 px-6 py-3 bg-white text-black 
                      rounded-full hover:bg-gray-100 "
+            >
+              다시 촬영 / 선택
+            </button>
+          )}
+        </div>
+      </div>
+      <div className="w-full p-4 mt-4 bg-app-bg-secondary">
+        <div className="flex justify-center space-x-4">
+          <button
+            onClick={handleDownload}
+            disabled={!isDrawingComplete}
+            className="w-80 px-6 py-3 bg-blue-500 text-white
+                     font-semibold rounded-full shadow-md 
+                     hover:bg-blue-600 disabled:bg-gray-400"
           >
-            다시 촬영 / 선택
+            {isDrawingComplete ? "결과 다운로드" : "분석 결과 그리는 중..."}
           </button>
-        )}
+        </div>
       </div>
     </div>
   );
