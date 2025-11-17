@@ -59,7 +59,29 @@ export default function WebCamera({ onCapture }: WebCameraProps) {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       const context = canvas.getContext("2d");
-      context?.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      if (context) {
+        // ⭐️ 1. 전면 카메라("user")일 때만 캔버스를 뒤집습니다.
+        if (facingMode === "user") {
+          context.save(); // 현재 캔버스 상태 저장
+          context.scale(-1, 1); // ⭐️ 캔버스를 가로로 뒤집기
+
+          // ⭐️ 캔버스가 뒤집혔으므로, 이미지를 그리는 x축 시작점도 반대로(-canvas.width) 변경
+          context.drawImage(
+            video,
+            -canvas.width,
+            0,
+            canvas.width,
+            canvas.height
+          );
+
+          context.restore(); // 캔버스 상태 원상 복구
+        } else {
+          // ⭐️ 2. 후면 카메라일 때는 정상적으로 그림
+          context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        }
+      }
+
       const imageDataUrl = canvas.toDataURL("image/png");
       onCapture(imageDataUrl);
       stopCamera();
@@ -90,9 +112,8 @@ export default function WebCamera({ onCapture }: WebCameraProps) {
         <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden">
           <video
             ref={videoRef}
-            className={`w-full h-full absolute top-0 left-0 ${
-              !isCameraOn ? "hidden" : ""
-            }`}
+            className={`w-full rounded-lg ${!isCameraOn ? "hidden" : ""}
+                        ${facingMode === "user" ? "scale-x-[-1]" : ""}`}
             autoPlay
             playsInline
             muted
