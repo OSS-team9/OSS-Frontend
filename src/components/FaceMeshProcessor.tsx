@@ -128,27 +128,6 @@ export default function FaceMeshProcessor({
 
     // 원본 이미지 + FaceMesh  그리기
     userImage.onload = async () => {
-      // [1단계] ⭐️ FaceMesh 감지 (데이터 준비)
-      const results = faceLandmarker.detect(userImage);
-      if (results.faceLandmarks.length === 0) {
-        setDetectionFailed(true);
-        setIsDrawingComplete(true);
-        return;
-      }
-
-      const landmarks = results.faceLandmarks[0];
-      const blendshapes = results.faceBlendshapes[0]?.categories || [];
-
-      // [2단계] ⭐️ AI 백엔드 통신 (Mock)
-      const aiResult = await getEmotionFromAI(blendshapes);
-
-      // [3단계] ⭐️ AI 결과에 맞는 '하나의' 아이콘 로드
-      const iconToDraw = new Image();
-      iconToDraw.src = `/emotions/${aiResult.emotion}_${aiResult.level}.png`;
-
-      // [4단계] ⭐️ 아이콘 로드 완료 대기
-      await new Promise((resolve) => (iconToDraw.onload = resolve));
-
       // [5단계] ⭐️ 모든 준비 완료. 이제 '한 번에' 그리기 시작
       const FIXED_WIDTH = 1440;
       const FIXED_HEIGHT = 1920;
@@ -184,6 +163,28 @@ export default function FaceMeshProcessor({
         canvas.width,
         canvas.height
       );
+
+      // [1단계] ⭐️ FaceMesh 감지 (데이터 준비)
+      const results = faceLandmarker.detect(userImage);
+      if (results.faceLandmarks.length === 0) {
+        setDetectionFailed(true);
+        setIsDrawingComplete(true);
+        return;
+      }
+
+      const landmarks = results.faceLandmarks[0];
+      const blendshapes = results.faceBlendshapes[0]?.categories || [];
+
+      // [2단계] ⭐️ AI 백엔드 통신 (Mock)
+      const aiResult = await getEmotionFromAI(blendshapes);
+
+      // [3단계] ⭐️ AI 결과에 맞는 '하나의' 아이콘 로드
+      const iconToDraw = new Image();
+      iconToDraw.src = `/emotions/${aiResult.emotion}_${aiResult.level}.png`;
+
+      // [4단계] ⭐️ 아이콘 로드 완료 대기
+      await new Promise((resolve) => (iconToDraw.onload = resolve));
+
       const scaledLandmarks = landmarks.map((landmark) => {
         // 1. 원본 이미지의 픽셀 좌표
         const originalX = landmark.x * userImage.naturalWidth;
@@ -286,7 +287,7 @@ export default function FaceMeshProcessor({
   return (
     <div className="w-full h-full">
       <div className="w-full p-4 bg-app-bg-secondary">
-        <Card className="mobile-container">
+        <Card className="mobile-container bg-gray-200">
           {/* 모델 로딩 중 메시지 */}
           {!faceLandmarker && (
             <div className="text-center p-4">
@@ -295,8 +296,8 @@ export default function FaceMeshProcessor({
           )}
 
           {/* FaceMesh가 그려질 캔버스 */}
-          <div className="aspect-[3/4]">
-            <canvas ref={canvasRef} className="w-full h-full rounded-2xl" />
+          <div className="aspect-3/4">
+            <canvas ref={canvasRef} className="w-full h-full" />
           </div>
 
           {/* '감지 실패' 상태일 때만 에러 메시지 */}

@@ -110,17 +110,19 @@ export default function WebCamera({ onCapture }: WebCameraProps) {
       <Card className="mobile-container">
         <canvas ref={canvasRef} className="hidden" />
 
-        <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden">
+        <div className="relative w-full aspect-3/4">
           <video
             ref={videoRef}
-            className={`w-full rounded-lg ${!isCameraOn ? "hidden" : ""}
+            className={`w-full h-full absolute top-0 left-0 object-cover${
+              !isCameraOn ? "hidden" : ""
+            }
                         ${facingMode === "user" ? "scale-x-[-1]" : ""}`}
             autoPlay
             playsInline
             muted
           />
           {!isCameraOn && (
-            <div className="flex items-center justify-center w-full h-full absolute top-0 left-0 bg-gray-200">
+            <div className="flex items-center justify-center w-full h-full bg-gray-200">
               <span className="text-gray-500">카메라가 꺼져있습니다.</span>
             </div>
           )}
