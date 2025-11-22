@@ -1,7 +1,9 @@
-export interface AnalysisResult {
-  id: string; // DB에 저장된 고유 ID
-  date: string; // 저장된 날짜 (예: "2025-11-22")
-  imageUrl: string; // 업로드된 이미지 URL (S3 등)
-  emotion: string; // 분석된 감정 (예: 'joy')
+export interface EmotionLog {
+  id: string; // DB 고유 ID
+  date: string; // 날짜 (YYYY-MM-DD)
+  emotion: string; // 감정 이름 (joy, sadness...)
   emotionLevel: number; // 감정 강도 (1~3)
+
+  // 👇 상세 화면이나 오늘의 결과에서만 쓰이는 이미지 URL (선택적)
+  imageUrl?: string;
 }

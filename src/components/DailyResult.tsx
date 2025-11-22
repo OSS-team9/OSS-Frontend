@@ -3,11 +3,11 @@
 import Image from "next/image";
 import { IoShareSocialOutline } from "react-icons/io5";
 import { getFormattedDate } from "@/utils/dateUtils";
-import { AnalysisResult } from "@/types";
-import Card from "@/components/Card";
+import { EmotionLog } from "@/types";
+import Card from "@/components/BorderCard";
 
 interface DailyResultProps {
-  data: AnalysisResult | null;
+  data: EmotionLog | null;
 }
 
 export default function DailyResult({ data }: DailyResultProps) {
@@ -33,12 +33,18 @@ export default function DailyResult({ data }: DailyResultProps) {
         {/* 왼쪽: 내 사진 (서버 URL) */}
         <Card className="flex-1.8 bg-gray-300 relative">
           <div className="w-full h-full relative aspect-3/4">
-            <Image
-              src={data.imageUrl}
-              alt="내 사진"
-              fill
-              className="object-cover"
-            />
+            {data.imageUrl ? (
+              <Image
+                src={data.imageUrl}
+                alt="내 사진"
+                fill
+                className="object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-gray-300 flex items-center justify-center">
+                <span className="text-gray-500 text-sm">사진 없음</span>
+              </div>
+            )}
           </div>
         </Card>
 

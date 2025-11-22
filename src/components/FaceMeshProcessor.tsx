@@ -6,7 +6,7 @@ import {
   FilesetResolver,
   DrawingUtils,
 } from "@mediapipe/tasks-vision";
-import Card from "@/components/Card";
+import Card from "@/components/BorderCard";
 
 interface FaceMeshProcessorProps {
   imageSrc: string;
