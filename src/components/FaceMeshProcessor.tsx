@@ -6,6 +6,7 @@ import {
   FilesetResolver,
   DrawingUtils,
 } from "@mediapipe/tasks-vision";
+import Card from "@/components/Card";
 
 interface FaceMeshProcessorProps {
   imageSrc: string;
@@ -285,7 +286,7 @@ export default function FaceMeshProcessor({
   return (
     <div className="w-full h-full">
       <div className="w-full p-4 bg-app-bg-secondary">
-        <div className="w-full max-w-md p-2 mx-auto rounded-2xl bg-white">
+        <Card className="mobile-container">
           {/* 모델 로딩 중 메시지 */}
           {!faceLandmarker && (
             <div className="text-center p-4">
@@ -305,7 +306,7 @@ export default function FaceMeshProcessor({
               <p className="text-sm">다른 사진으로 다시 시도해주세요.</p>
             </div>
           )}
-        </div>
+        </Card>
 
         {/* '다시 찍기' 버튼 (모델 로드가 완료된 후에만 표시) */}
         <div className="flex justify-center mt-4 space-x-4 pb-1">

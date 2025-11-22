@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Card from "@/components/Card";
 
 interface WebCameraProps {
   onCapture: (imageSrc: string) => void;
@@ -106,7 +107,7 @@ export default function WebCamera({ onCapture }: WebCameraProps) {
 
   return (
     <div className="w-full p-4 bg-app-bg-secondary">
-      <div className="w-full max-w-md p-2 mx-auto rounded-2xl bg-white">
+      <Card className="mobile-container">
         <canvas ref={canvasRef} className="hidden" />
 
         <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden">
@@ -124,7 +125,7 @@ export default function WebCamera({ onCapture }: WebCameraProps) {
             </div>
           )}
         </div>
-      </div>
+      </Card>
       <div className="flex justify-center mt-4 space-x-4 pb-1">
         {isCameraOn ? (
           <>
