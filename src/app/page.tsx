@@ -4,7 +4,7 @@
 import Link from "next/link";
 import DailyResult from "@/components/DailyResult";
 import EmotionHistory from "@/components/EmotionHistory";
-// import EmotionChart from "@/components/EmotionChart";
+import EmotionChart from "@/components/EmotionChart";
 import { EmotionLog } from "@/types";
 
 export default function HomePage() {
@@ -37,12 +37,16 @@ export default function HomePage() {
           <DailyResult data={todayData} />
         </div>
       </section>
-      {/* 2. 하단 영역 (연한 갈색 배경 + 겹쳐진 카드들) */}
-      {/* -mt-6: 상단 영역 위로 살짝 겹치게 하여 입체감 부여 */}
       <section className="px-4 py-3">
         <div className="mobile-container">
           {/* ⭐️ 감정 기록 (데이터 전달) */}
           <EmotionHistory logs={historyData} />
+        </div>
+      </section>
+      <hr className="border-white mx-6" />
+      <section className="px-4 py-3">
+        <div className="mobile-container flex flex-col gap-4 pb-24">
+          <EmotionChart />
         </div>
       </section>
     </div>
