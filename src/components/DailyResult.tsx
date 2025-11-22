@@ -58,7 +58,7 @@ export default function DailyResult({ data }: DailyResultProps) {
               fill
               className="object-cover" // 카드를 꽉 채움
             />
-            <div className="w-full h-full relative z-10 flex items-center justify-center">
+            <div className="w-full h-full relative z-1 flex items-center justify-center">
               <Image
                 src={characterImage}
                 alt={`${data.emotion} character`}
