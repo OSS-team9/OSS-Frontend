@@ -6,6 +6,19 @@
   --color-app-bg-tertiary: #56412c;
   --font-sans: var(--font-pretendard);
   --font-lotte: var(--font-lotte);
+
+  --color-joy-bg: #fff1c9;
+  --color-joy: #fcc627;
+  --color-sadness-bg: #d7f2ff;
+  --color-sadness: #60afd3;
+  --color-anger-bg: #ffdddd;
+  --color-anger: #d53333;
+  --color-anxiety-bg: #fff1d9;
+  --color-anxiety: #e99400;
+  --color-panic-bg: #ffdaf6;
+  --color-panic: #b9509f;
+  --color-neutral-bg: #ebebeb;
+  --color-neutral: #939090;
 }
 
 :root {
