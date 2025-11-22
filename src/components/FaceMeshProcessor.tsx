@@ -241,6 +241,47 @@ export default function FaceMeshProcessor({
     link.click();
   };
 
+  // [공유 기능] Web Share API 사용
+  const handleShare = async () => {
+    if (!canvasRef.current || !isDrawingComplete) return;
+
+    try {
+      const canvas = canvasRef.current;
+
+      // 1. 캔버스를 Blob(파일 객체)으로 변환
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, "image/png")
+      );
+
+      if (!blob) {
+        alert("이미지를 생성하지 못했습니다.");
+        return;
+      }
+
+      // 2. 공유할 파일 객체 생성
+      const file = new File([blob], "today-haru_result.png", {
+        type: "image/png",
+      });
+
+      // 3. 브라우저가 파일 공유를 지원하는지 확인
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: "오늘:하루 감정 분석",
+          text: "내 감정 분석 결과를 확인해보세요!",
+        });
+      } else {
+        // 지원하지 않는 경우 (PC 등) -> 다운로드로 대체하거나 알림
+        alert(
+          "이 브라우저는 이미지 공유를 지원하지 않습니다. 다운로드 기능을 이용해주세요."
+        );
+      }
+    } catch (error) {
+      console.error("공유 실패:", error);
+      // 사용자가 공유를 취소했을 때도 에러로 잡히므로, 조용히 넘어가는 게 좋습니다.
+    }
+  };
+
   return (
     <div className="w-full h-full">
       <div className="w-full p-4 bg-app-bg-secondary">
@@ -280,7 +321,15 @@ export default function FaceMeshProcessor({
         </div>
       </div>
       <div className="w-full p-4 mt-4 bg-app-bg-secondary">
-        <div className="flex justify-center space-x-4">
+        <div className="flex flex-col items-center space-y-4 w-full">
+          <button
+            onClick={handleShare}
+            disabled={!isDrawingComplete}
+            className="w-80 px-6 py-3 font-bold text-white bg-pink-500 rounded-full 
+                        hover:bg-pink-600 disabled:bg-gray-400"
+          >
+            공유하기
+          </button>
           <button
             onClick={handleDownload}
             disabled={!isDrawingComplete}
