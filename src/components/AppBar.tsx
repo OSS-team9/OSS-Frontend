@@ -1,10 +1,4 @@
-import localFont from 'next/font/local';
-
-const lotteFont = localFont({
-  src: '../../public/fonts/SEOLLEIMcool.woff2',
-  weight: '600',
-  display: 'swap',
-});
+import localFont from "next/font/local";
 
 interface AppBarProps {
   onMenuToggle: () => void;
@@ -12,9 +6,8 @@ interface AppBarProps {
 
 export default function AppBar({ onMenuToggle }: AppBarProps) {
   return (
-    <header className="fixed top-0 left-0 right-0 z-10 h-16 bg-app-bg">
-      
-      <div className="flex items-center justify-start h-full max-w-md px-4 mx-auto">  
+    <header className="fixed top-0 left-0 right-0 z-10 h-16 bg-app-bg-tertiary">
+      <div className="flex items-center justify-start h-full max-w-md px-4 mx-auto">
         {/*  햄버거 버튼 (왼쪽) */}
         <button
           onClick={onMenuToggle}
@@ -22,7 +15,7 @@ export default function AppBar({ onMenuToggle }: AppBarProps) {
           aria-label="메뉴 열기"
         >
           <svg
-            className="w-6 h-6 text-black"
+            className="w-6 h-6 text-app-bg"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -37,10 +30,8 @@ export default function AppBar({ onMenuToggle }: AppBarProps) {
           </svg>
         </button>
 
-        <h1 className={`text-base text-black ${lotteFont.className} ml-4`}>
-            오늘:하루
-        </h1>
-        
+        <h1 className={`text-base text-app-bg font-lotte ml-4`}>오늘:하루</h1>
+
         <div className="w-6" />
       </div>
     </header>

@@ -8,6 +8,12 @@ import { AuthProvider } from "@/components/AuthContext";
 
 import ClientLayout from "@/components/ClientLayout";
 
+const lotteFont = localFont({
+  src: "../../public/fonts/SEOLLEIMcool.woff2",
+  variable: "--font-lotte",
+  display: "swap",
+});
+
 const pretendard = localFont({
   src: [
     {
@@ -53,7 +59,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className={pretendard.variable}>
+    <html lang="ko" className={`${pretendard.variable} ${lotteFont.variable}`}>
       <body className={pretendard.className}>
         <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
           <AuthProvider>

@@ -2,8 +2,10 @@
 
 @theme {
   --color-app-bg: #eadcc7;
-  --color-app-bg-secondary: #a18958;
+  --color-app-bg-secondary: #72593e;
+  --color-app-bg-tertiary: #56412c;
   --font-sans: var(--font-pretendard);
+  --font-lotte: var(--font-lotte);
 }
 
 :root {
