@@ -38,9 +38,6 @@ export default function CameraPage() {
     if (!token) {
       // 비로그인: 1초 뒤 로그인 유도 모달
       setTimeout(() => setShowLoginModal(true), 2000);
-    } else {
-      // 로그인: 바로 저장 및 이동
-      saveAndRedirect(token, emotion, level);
     }
   };
 
@@ -98,6 +95,17 @@ export default function CameraPage() {
     router.push("/");
   };
 
+  const handleSaveAction = () => {
+    if (!token) {
+      setShowLoginModal(true); // 로그인 안 했으면 모달 띄우기
+    } else {
+      // 로그인 했으면 저장하고 이동
+      if (analyzedResult) {
+        saveAndRedirect(token, analyzedResult.emotion, analyzedResult.level);
+      }
+    }
+  };
+
   return (
     <main className="flex min-h-screen flex-col items-center bg-app-bg pb-16">
       {!tempImage && (
@@ -118,6 +126,8 @@ export default function CameraPage() {
                 setShowLoginModal(false);
               }}
               onAnalysisComplete={handleAnalysisComplete}
+              isLoggedIn={!!token}
+              onSaveRequest={handleSaveAction}
             />
           </div>
 

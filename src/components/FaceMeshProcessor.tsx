@@ -12,6 +12,8 @@ interface FaceMeshProcessorProps {
   imageSrc: string;
   onRetake: () => void;
   onAnalysisComplete?: (emotion: string, level: number) => void;
+  onSaveRequest?: () => void;
+  isLoggedIn: boolean;
 }
 
 const EMOTIONS = [
@@ -77,6 +79,8 @@ export default function FaceMeshProcessor({
   imageSrc,
   onRetake,
   onAnalysisComplete,
+  onSaveRequest,
+  isLoggedIn,
 }: FaceMeshProcessorProps) {
   const [faceLandmarker, setFaceLandmarker] = useState<FaceLandmarker | null>(
     null
@@ -318,6 +322,21 @@ export default function FaceMeshProcessor({
 
         {/* '다시 찍기' 버튼 (모델 로드가 완료된 후에만 표시) */}
         <div className="flex justify-center mt-4 space-x-4 pb-1">
+          {onSaveRequest && (
+            <button
+              onClick={onSaveRequest}
+              disabled={!isDrawingComplete}
+              className="w-full py-4 bg-blue-600 text-white font-bold rounded-2xl shadow-md
+                       hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 transition"
+            >
+              {/* ⭐️ 로그인 상태에 따라 텍스트 변경 */}
+              {isDrawingComplete
+                ? isLoggedIn
+                  ? "결과 저장하기"
+                  : "결과 저장하기 (로그인)"
+                : "분석 중..."}
+            </button>
+          )}
           {faceLandmarker && (
             <button
               onClick={onRetake}
