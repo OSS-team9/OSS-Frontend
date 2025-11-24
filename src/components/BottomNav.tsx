@@ -21,16 +21,16 @@ export default function BottomNav() {
     <nav className="fixed bottom-0 left-0 right-0 h-16 bg-app-bg-secondary">
       <div className="flex justify-around items-center h-full max-w-md mx-auto">
         {/* 'Link' 태그로 각 페이지를 연결합니다. */}
-        <Link href="/" className={iconWrapperStyle}>
-          {pathname === "/" ? (
+        <Link href="/main" className={iconWrapperStyle}>
+          {pathname === "/main" ? (
             <HiHome className={`${iconStyle} text-black`} /> // 활성 (Solid + 검은색)
           ) : (
             <HiOutlineHome className={`${iconStyle} text-black/60`} /> // 비활성 (Outline + 연한 검은색)
           )}
         </Link>
 
-        <Link href="/second" className={iconWrapperStyle}>
-          {pathname === "/second" ? (
+        <Link href="/camera" className={iconWrapperStyle}>
+          {pathname === "/camera" ? (
             <HiPlusCircle className={`${iconStyle} text-black`} />
           ) : (
             <HiOutlinePlusCircle className={`${iconStyle} text-black/60`} />

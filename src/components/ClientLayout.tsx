@@ -1,6 +1,9 @@
+// src/components/ClientLayout.tsx
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
+import { useAuth } from "./AuthContext"; // ⭐️ 로그인 상태 확인
 import AppBar from "./AppBar";
 import Sidebar from "./Sidebar";
 import BottomNav from "./BottomNav";
@@ -10,23 +13,31 @@ interface ClientLayoutProps {
 }
 
 export default function ClientLayout({ children }: ClientLayoutProps) {
-  // 사이드바 열림/닫힘 '상태'를 여기서 관리
+  const pathname = usePathname();
+  const { token } = useAuth(); // ⭐️ 토큰 가져오기
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  return (
-    <div className="relative">
-      {/* AppBar에 '메뉴 열기' 함수를 전달 */}
-      <AppBar onMenuToggle={() => setIsMenuOpen(true)} />
+  // 1. ⭐️ 무조건 숨길 경로 (랜딩 페이지)
+  const alwaysHiddenRoutes = ["/"];
 
-      {/* Sidebar에 '열림 상태'와 '메뉴 닫기' 함수를 전달 */}
+  // 2. ⭐️ 조건부 숨김 (카메라 페이지는 비로그인(체험) 상태일 때만 숨김)
+  const isCameraHidden = pathname === "/camera" && !token;
+
+  // 3. 최종 숨김 여부 결정
+  const isHidden = alwaysHiddenRoutes.includes(pathname) || isCameraHidden;
+
+  return (
+    <div className="relative min-h-screen bg-[--color-app-bg]">
+      {/* ⭐️ isHidden이 false일 때만 AppBar 표시 */}
+      {!isHidden && <AppBar onMenuToggle={() => setIsMenuOpen(true)} />}
+
       <Sidebar isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
 
-      {/* 실제 페이지 내용 */}
-      {/* AppBar(h-16)와 BottomNav(h-16)에 가려지지 않게 여백(pt, pb)을 줌 */}
-      <main className="pt-16 pb-16">{children}</main>
+      {/* ⭐️ isHidden이면 전체 화면(패딩 0), 아니면 위아래 여백(pt-16 pb-16) */}
+      <main className={isHidden ? "" : "pt-16 pb-16"}>{children}</main>
 
-      {/* 하단 탭 메뉴 */}
-      <BottomNav />
+      {/* ⭐️ isHidden이 false일 때만 BottomNav 표시 */}
+      {!isHidden && <BottomNav />}
     </div>
   );
 }
