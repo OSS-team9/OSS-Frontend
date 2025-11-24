@@ -11,6 +11,7 @@ import Card from "@/components/BorderCard";
 interface FaceMeshProcessorProps {
   imageSrc: string;
   onRetake: () => void;
+  onAnalysisComplete?: (emotion: string, level: number) => void;
 }
 
 const EMOTIONS = [
@@ -75,6 +76,7 @@ async function getEmotionFromAI(
 export default function FaceMeshProcessor({
   imageSrc,
   onRetake,
+  onAnalysisComplete,
 }: FaceMeshProcessorProps) {
   const [faceLandmarker, setFaceLandmarker] = useState<FaceLandmarker | null>(
     null
@@ -177,6 +179,11 @@ export default function FaceMeshProcessor({
 
       // [2단계] ⭐️ AI 백엔드 통신 (Mock)
       const aiResult = await getEmotionFromAI(blendshapes);
+
+      // ⭐️ 분석 완료 시 부모에게 알림
+      if (onAnalysisComplete) {
+        onAnalysisComplete(aiResult.emotion, aiResult.level);
+      }
 
       // [3단계] ⭐️ AI 결과에 맞는 '하나의' 아이콘 로드
       const iconToDraw = new Image();
