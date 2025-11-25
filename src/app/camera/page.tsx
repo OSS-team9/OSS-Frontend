@@ -7,6 +7,7 @@ import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "@/components/AuthContext";
 import { IoClose } from "react-icons/io5";
 import { toKoreanEmotion } from "@/utils/emotionUtils";
+import { dataURLtoFile } from "@/utils/fileUtils";
 
 import WebCamera from "@/components/WebCamera";
 import PhotoUploader from "@/components/PhotoUploader";
@@ -24,6 +25,10 @@ export default function CameraPage() {
     emotion: string;
     level: number;
   } | null>(null);
+  const [finalProcessedImage, setFinalProcessedImage] = useState<string | null>(
+    null
+  );
+
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   // 3. 촬영/업로드 완료 핸들러
@@ -33,9 +38,13 @@ export default function CameraPage() {
   };
 
   // 4. 분석 완료 핸들러 (기능 유지)
-  const handleAnalysisComplete = (emotion: string, level: number) => {
+  const handleAnalysisComplete = (
+    emotion: string,
+    level: number,
+    processedImage: string
+  ) => {
     setAnalyzedResult({ emotion, level });
-
+    setFinalProcessedImage(processedImage);
     if (!token) {
       // 비로그인: 1초 뒤 로그인 유도 모달
       setTimeout(() => setShowLoginModal(true), 2000);
@@ -46,7 +55,8 @@ export default function CameraPage() {
   const saveAndRedirect = async (
     userToken: string,
     emotionEn: string,
-    level: number
+    level: number,
+    imageToUpload?: string
   ) => {
     try {
       const emotionKo = toKoreanEmotion(emotionEn); // joy -> 기쁨
@@ -56,19 +66,46 @@ export default function CameraPage() {
         .toISOString()
         .split("T")[0];
 
+      // 1. ⭐️ FormData 생성
+      const formData = new FormData();
+      formData.append("date", today);
+      formData.append("emotion", emotionKo);
+      formData.append("intensity", level.toString());
+
+      // ⭐️ 저장할 이미지 처리 (인자로 받은 것 우선, 없으면 state, 없으면 원본)
+      const targetImage = imageToUpload || finalProcessedImage || tempImage;
+
+      if (targetImage) {
+        let imageFile: File;
+
+        if (targetImage.startsWith("data:")) {
+          // Base64 (FaceMesh 결과 등)
+          imageFile = dataURLtoFile(targetImage, `emotion_${today}.png`);
+        } else {
+          // Blob URL (갤러리 원본 등)
+          const response = await fetch(targetImage);
+          const blob = await response.blob();
+          const mimeType = blob.type || "image/png";
+          const extension = mimeType.split("/")[1] || "png";
+          imageFile = new File([blob], `emotion_${today}.${extension}`, {
+            type: mimeType,
+          });
+        }
+
+        formData.append("image", imageFile);
+      }
+
+      // 3. API 요청 (Content-Type 헤더 제거 필수!)
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_HOST}/emotions`,
         {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
             Authorization: `Bearer ${userToken}`,
+            // ⚠️ 주의: Content-Type: 'multipart/form-data'를 직접 적으면 안 됩니다.
+            // 브라우저가 boundary와 함께 자동으로 설정하도록 놔둬야 합니다.
           },
-          body: JSON.stringify({
-            date: today,
-            emotion: emotionKo,
-            intensity: level,
-          }),
+          body: formData,
         }
       );
 
@@ -103,11 +140,12 @@ export default function CameraPage() {
 
       login(data.access_token);
 
-      if (analyzedResult) {
+      if (analyzedResult && finalProcessedImage) {
         saveAndRedirect(
           data.access_token,
           analyzedResult.emotion,
-          analyzedResult.level
+          analyzedResult.level,
+          finalProcessedImage
         );
       }
     } catch (err) {

@@ -65,7 +65,7 @@ function MainPage() {
               date: found.date,
               emotion: toEnglishEmotion(found.emotion),
               emotionLevel: found.emotionLevel || found.intensity || 1,
-              imageUrl: found.imageUrl,
+              imageUrl: found.imageData || found.imageUrl,
             });
           } else {
             // [데이터 없음] ⭐️ '빈 날짜 객체' 추가 (id는 임시값, emotion은 'empty' 같은 값)
@@ -83,7 +83,7 @@ function MainPage() {
 
         // 오늘 데이터 찾기
         const todayLog = last4Days.find(
-          (log: EmotionLog) => log.date === todayStr
+          (log) => log.date === todayStr && log.emotion !== "empty"
         );
         setTodayData(todayLog || null);
       } catch (error) {
