@@ -337,7 +337,7 @@ export default function FaceMeshProcessor({
                 : "분석 중..."}
             </button>
           )}
-          {faceLandmarker && (
+          {faceLandmarker && !detectionFailed && (
             <button
               onClick={onRetake}
               className="w-80 px-6 py-3 bg-white text-black 
