@@ -18,6 +18,7 @@ interface FaceMeshProcessorProps {
   ) => void;
   onSaveRequest?: () => void;
   isLoggedIn: boolean;
+  isSaving?: boolean;
 }
 
 const EMOTIONS = [
@@ -85,6 +86,7 @@ export default function FaceMeshProcessor({
   onAnalysisComplete,
   onSaveRequest,
   isLoggedIn,
+  isSaving = false,
 }: FaceMeshProcessorProps) {
   const [faceLandmarker, setFaceLandmarker] = useState<FaceLandmarker | null>(
     null
@@ -331,21 +333,30 @@ export default function FaceMeshProcessor({
           {onSaveRequest && (
             <button
               onClick={onSaveRequest}
-              disabled={!isDrawingComplete}
+              disabled={!isDrawingComplete || isSaving}
               className="w-full py-4 bg-blue-600 text-white font-bold rounded-2xl shadow-md
                        hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 transition"
             >
-              {/* ⭐️ 로그인 상태에 따라 텍스트 변경 */}
-              {isDrawingComplete
-                ? isLoggedIn
-                  ? "결과 저장하기"
-                  : "결과 저장하기 (로그인)"
-                : "분석 중..."}
+              {/* ⭐️ 버튼 텍스트 분기 처리 */}
+              {isSaving ? (
+                <>
+                  <span className="animate-spin mr-2">⏳</span> 저장 중...
+                </>
+              ) : isDrawingComplete ? (
+                isLoggedIn ? (
+                  "결과 저장하기"
+                ) : (
+                  "결과 저장하기 (로그인)"
+                )
+              ) : (
+                "분석 중..."
+              )}
             </button>
           )}
           {faceLandmarker && !detectionFailed && (
             <button
               onClick={onRetake}
+              disabled={isSaving}
               className="w-80 px-6 py-3 bg-white text-black 
                      rounded-full hover:bg-gray-100 "
             >

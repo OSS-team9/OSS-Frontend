@@ -28,6 +28,7 @@ export default function CameraPage() {
   const [finalProcessedImage, setFinalProcessedImage] = useState<string | null>(
     null
   );
+  const [isSaving, setIsSaving] = useState(false);
 
   const [showLoginModal, setShowLoginModal] = useState(false);
 
@@ -58,6 +59,7 @@ export default function CameraPage() {
     level: number,
     imageToUpload?: string
   ) => {
+    setIsSaving(true);
     try {
       const emotionKo = toKoreanEmotion(emotionEn); // joy -> 기쁨
       const now = new Date();
@@ -120,6 +122,7 @@ export default function CameraPage() {
     } catch (e) {
       console.error(e);
       alert("저장 중 오류가 발생했습니다.");
+      setIsSaving(false);
     }
   };
 
@@ -195,6 +198,7 @@ export default function CameraPage() {
               onAnalysisComplete={handleAnalysisComplete}
               isLoggedIn={!!token}
               onSaveRequest={handleSaveAction}
+              isSaving={isSaving}
             />
           </div>
 
