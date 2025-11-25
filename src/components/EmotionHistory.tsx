@@ -29,32 +29,49 @@ export default function EmotionHistory({ logs }: EmotionHistoryProps) {
       </div>
 
       <div className="flex justify-between gap-4 mt-4">
-        {/* ⭐️ logs 배열을 순회하며 렌더링 */}
         {logs.map((item) => {
           const { mmdd, dayOfWeek } = parseDate(item.date);
-          const bgColor = EMOTION_COLORS[item.emotion] || "bg-gray-100";
+          const isEmpty = item.emotion === "empty";
+
+          // 1. ⭐️ 공통 레이아웃 (크기, 정렬, 패딩 통일)
+          // h-30 (120px)을 기준으로 맞춥니다.
+          const baseStyle =
+            "flex flex-col items-center justify-between flex-1 w-full h-30 py-3 px-1 rounded-3xl";
+
+          // 2. ⭐️ 상태별 스타일 (배경, 테두리)
+          // 빈 상태는 점선 테두리, 데이터 상태는 색상 배경 + 그림자
+          const appearanceStyle = isEmpty
+            ? "border-2 border-dashed border-gray-200 bg-gray-50"
+            : `shadow-sm ${EMOTION_COLORS[item.emotion] || "bg-gray-100"}`;
+
+          // 3. ⭐️ 텍스트 색상
+          const titleColor = isEmpty ? "text-gray-300" : "text-black/80";
+          const subTextColor = isEmpty ? "text-gray-300" : "text-gray-600";
 
           return (
-            <div
-              key={item.id}
-              className={`flex flex-col items-center justify-between 
-                          flex-1 w-full h-30 py-3 px-1 rounded-3xl shadow-sm 
-                          ${bgColor}`}
-            >
-              <span className="text-base font-bold text-black/80">
+            <div key={item.id} className={`${baseStyle} ${appearanceStyle}`}>
+              <span className={`text-lg font-bold ${titleColor}`}>
                 {dayOfWeek}
               </span>
-              <span className="text-sm text-gray-600 font-medium mt-3">
+
+              <span className={`text-sm font-medium mt-0.5 ${subTextColor}`}>
                 {mmdd}
               </span>
 
-              <div className="relative w-8 h-8 mt-2">
-                <Image
-                  src={`/emotions/${item.emotion}.png`}
-                  alt={item.emotion}
-                  fill
-                  className="object-contain"
-                />
+              {/* 4. ⭐️ 아이콘 영역 (위치/크기 통일) */}
+              <div className="relative w-10 h-10 mt-2 flex items-center justify-center">
+                {isEmpty ? (
+                  // 빈 상태 아이콘 (회색 원)
+                  <div className="w-8 h-8 rounded-full bg-gray-200/50" />
+                ) : (
+                  // 데이터 아이콘 (이미지)
+                  <Image
+                    src={`/emotions/${item.emotion}.png`}
+                    alt={item.emotion}
+                    fill
+                    className="object-contain"
+                  />
+                )}
               </div>
             </div>
           );

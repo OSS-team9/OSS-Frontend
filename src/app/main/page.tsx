@@ -1,37 +1,100 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/AuthContext";
-import withAuth from "@/components/withAuth";
 
 import DailyResult from "@/components/DailyResult";
 import EmotionHistory from "@/components/EmotionHistory";
-import EmotionChart from "@/components/EmotionChart";
 import { EmotionLog } from "@/types";
+import { toEnglishEmotion } from "@/utils/emotionUtils";
+import withAuth from "@/components/withAuth";
 
 function MainPage() {
   const { token } = useAuth();
 
-  // ⭐️ (가짜 데이터) 서버에서 받아왔다고 가정하는 '오늘의 데이터'
-  // 데이터가 없으면(null이면) 빈 화면 처리를 할 수도 있습니다.
-  const todayData: EmotionLog = {
-    id: "1",
-    date: "11. 04 (토)", // 디자인 시안 날짜
-    imageUrl: "/images/face.jpg",
-    emotion: "joy",
-    emotionLevel: 3,
-  };
+  const [logs, setLogs] = useState<EmotionLog[]>([]);
+  const [todayData, setTodayData] = useState<EmotionLog | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // 2. ⭐️ 과거 기록 데이터 (가짜 데이터)
-  const historyData: EmotionLog[] = [
-    { id: "h1", date: "2025-10-31", emotion: "joy", emotionLevel: 2 },
-    { id: "h2", date: "2025-11-01", emotion: "sadness", emotionLevel: 1 },
-    { id: "h3", date: "2025-11-02", emotion: "neutral", emotionLevel: 1 },
-    { id: "h4", date: "2025-11-03", emotion: "anger", emotionLevel: 3 },
-  ];
+  useEffect(() => {
+    if (!token) return;
 
-  // (참고) 만약 데이터가 없다면 null로 설정
-  // const todayData = null;
+    const fetchEmotions = async () => {
+      try {
+        // 1. 날짜 계산 (오늘 ~ 3일 전 = 총 4일)
+        const now = new Date();
+        const offset = now.getTimezoneOffset() * 60000;
+        const today = new Date(now.getTime() - offset);
+
+        const todayStr = today.toISOString().split("T")[0];
+
+        const threeDaysAgo = new Date(today);
+        threeDaysAgo.setDate(today.getDate() - 3);
+        const startDateStr = threeDaysAgo.toISOString().split("T")[0];
+
+        // 2. API 호출
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_HOST}/emotions?start_date=${startDateStr}&end_date=${todayStr}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("데이터를 불러오지 못했습니다.");
+        }
+
+        const json = await response.json();
+        const serverData: any[] = json.data || [];
+        const last4Days: EmotionLog[] = [];
+
+        for (let i = 3; i >= 0; i--) {
+          const d = new Date(today);
+          d.setDate(today.getDate() - i);
+          const dateStr = d.toISOString().split("T")[0];
+
+          // 해당 날짜 데이터 찾기
+          const found = serverData.find((item) => item.date === dateStr);
+
+          if (found) {
+            // [데이터 있음] 변환해서 추가
+            last4Days.push({
+              id: found.id,
+              date: found.date,
+              emotion: toEnglishEmotion(found.emotion),
+              emotionLevel: found.emotionLevel || found.intensity || 1,
+              imageUrl: found.imageUrl,
+            });
+          } else {
+            // [데이터 없음] ⭐️ '빈 날짜 객체' 추가 (id는 임시값, emotion은 'empty' 같은 값)
+            // EmotionHistory에서 emotion이 없거나 'empty'일 때 빈칸을 그리도록 처리해야 함
+            last4Days.push({
+              id: `empty_${dateStr}`,
+              date: dateStr,
+              emotion: "empty", // ⭐️ 'empty'라는 가상의 감정 상태 추가
+              emotionLevel: 0,
+            });
+          }
+        }
+
+        setLogs(last4Days);
+
+        // 오늘 데이터 찾기
+        const todayLog = last4Days.find(
+          (log: EmotionLog) => log.date === todayStr
+        );
+        setTodayData(todayLog || null);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchEmotions();
+  }, [token]);
 
   return (
     <div className="min-h-screen bg-app-bg">
@@ -44,13 +107,7 @@ function MainPage() {
       <section className="px-4 py-3">
         <div className="mobile-container">
           {/* ⭐️ 감정 기록 (데이터 전달) */}
-          <EmotionHistory logs={historyData} />
-        </div>
-      </section>
-      <hr className="border-white mx-6" />
-      <section className="px-4 py-3">
-        <div className="mobile-container flex flex-col gap-4 pb-24">
-          <EmotionChart />
+          <EmotionHistory logs={logs} />
         </div>
       </section>
     </div>
