@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "@/components/AuthContext";
 import { IoClose } from "react-icons/io5";
+import { toKoreanEmotion } from "@/utils/emotionUtils";
 
 import WebCamera from "@/components/WebCamera";
 import PhotoUploader from "@/components/PhotoUploader";
@@ -44,16 +45,44 @@ export default function CameraPage() {
   // 5. 저장 및 이동 함수
   const saveAndRedirect = async (
     userToken: string,
-    emotion: string,
+    emotionEn: string,
     level: number
   ) => {
     try {
-      // TODO: 실제 서버 전송
-      console.log("서버 저장 완료:", { emotion, level });
+      const emotionKo = toKoreanEmotion(emotionEn); // joy -> 기쁨
+      const now = new Date();
+      const offset = now.getTimezoneOffset() * 60000;
+      const today = new Date(now.getTime() - offset)
+        .toISOString()
+        .split("T")[0];
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_HOST}/emotions`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${userToken}`,
+          },
+          body: JSON.stringify({
+            date: today,
+            emotion: emotionKo,
+            intensity: level,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || "저장 실패");
+      }
+
+      console.log("서버 저장 완료:", { response });
       alert("저장되었습니다!");
-      router.push("/main");
+      router.push("/main"); // 메인으로 이동
     } catch (e) {
-      alert("저장 중 오류 발생");
+      console.error(e);
+      alert("저장 중 오류가 발생했습니다.");
     }
   };
 
