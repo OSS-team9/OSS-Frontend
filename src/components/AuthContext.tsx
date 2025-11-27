@@ -6,6 +6,7 @@ import {
   useState,
   ReactNode,
   useEffect,
+  useRef,
 } from "react";
 import { useRouter } from "next/navigation";
 
@@ -24,6 +25,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // 'token' state로 서버 전용 토큰을 관리
   const [token, setToken] = useState<string | null>(null);
   const router = useRouter();
+  const isLoggingOutRef = useRef(false);
 
   //   컴포넌트가 '브라우저'에서 처음 실행될 때
   //   localStorage(브라우저 저장소)에서 토큰을 불러와 state에 설정
@@ -59,12 +61,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // 3. ⭐️ 401(만료) 체크: 여기서 전역적으로 가로챕니다!
     if (response.status === 401) {
+      // "이미 로그아웃 처리 중이라면" -> 무시하고 그냥 리턴
+      if (isLoggingOutRef.current) {
+        return response;
+      }
+
+      // "처음으로 401을 만났다면" -> 깃발을 꽂고(true) 알림 띄움
+      isLoggingOutRef.current = true;
+
       console.warn("토큰 만료됨: 자동 로그아웃");
       alert("로그인 세션이 만료되었습니다. 다시 로그인해주세요.");
-      logout(); // 👈 여기서 로그아웃 실행!
+      logout();
 
-      // 에러를 던져서 페이지의 try-catch로 넘기되,
-      // 이미 로그아웃 되었으므로 페이지는 곧 리디렉션 됩니다.
       throw new Error("Session expired");
     }
 
