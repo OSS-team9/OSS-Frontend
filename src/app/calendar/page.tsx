@@ -5,9 +5,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import withAuth from "@/components/withAuth";
 import { useAuth } from "@/components/AuthContext";
-
 import CalendarView from "@/components/CalendarView";
-import LoadingSpinner from "@/components/LoadingSpinner"; // ⭐️ 로딩 컴포넌트 추가
+import LoadingSpinner from "@/components/LoadingSpinner";
 import { EmotionLog } from "@/types";
 import { toEnglishEmotion } from "@/utils/emotionUtils";
 
@@ -16,24 +15,39 @@ function CalendarPage() {
   const { token, authFetch } = useAuth();
 
   const [logs, setLogs] = useState<EmotionLog[]>([]);
-  const [isLoading, setIsLoading] = useState(true); // ⭐️ 로딩 상태 추가
+  const [isLoading, setIsLoading] = useState(true);
 
+  // ⭐️ 1. 날짜 상태를 여기서 관리 (기본값: 오늘)
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  // ⭐️ 2. currentDate가 바뀔 때마다 API 호출
   useEffect(() => {
     if (!token) return;
 
     const fetchMonthData = async () => {
+      setIsLoading(true); // 로딩 시작
       try {
-        const now = new Date();
-        // (우선 이번 달 1일 ~ 말일 데이터만 가져옴)
-        const start = new Date(now.getFullYear(), now.getMonth(), 1)
-          .toISOString()
-          .split("T")[0];
-        const end = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-          .toISOString()
-          .split("T")[0];
+        // ⭐️ currentDate를 기준으로 해당 월의 1일 ~ 말일 계산
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+
+        // (로컬 시간 기준 문자열 생성 - UTC 문제 방지)
+        const start = new Date(year, month, 1);
+        const end = new Date(year, month + 1, 0);
+
+        // "YYYY-MM-DD" 포맷팅 함수 (로컬 시간 기준)
+        const formatDate = (d: Date) => {
+          const y = d.getFullYear();
+          const m = String(d.getMonth() + 1).padStart(2, "0");
+          const day = String(d.getDate()).padStart(2, "0");
+          return `${y}-${m}-${day}`;
+        };
+
+        const startStr = formatDate(start);
+        const endStr = formatDate(end);
 
         const response = await authFetch(
-          `${process.env.NEXT_PUBLIC_API_HOST}/emotions?start_date=${start}&end_date=${end}`
+          `${process.env.NEXT_PUBLIC_API_HOST}/emotions?start_date=${startStr}&end_date=${endStr}`
         );
 
         if (!response.ok) throw new Error("데이터 로드 실패");
@@ -52,20 +66,18 @@ function CalendarPage() {
       } catch (error) {
         console.error(error);
       } finally {
-        setIsLoading(false); // ⭐️ 로딩 종료
+        setIsLoading(false);
       }
     };
 
     fetchMonthData();
-  }, [token, authFetch]);
+  }, [token, authFetch, currentDate]);
 
   return (
     <div className="min-h-screen bg-app-bg pt-6 px-4 pb-24">
-      {/* 상단 헤더 */}
       <div className="flex items-center mb-6 relative">
         <button
           onClick={() => router.back()}
-          // (흰색 -> 검은색으로 수정하여 가독성 확보)
           className="text-2xl font-bold text-black/60 absolute left-0 hover:text-black transition-colors"
         >
           ✕
@@ -75,13 +87,17 @@ function CalendarPage() {
         </h1>
       </div>
 
-      {/* ⭐️ 로딩 상태에 따른 화면 분기 */}
+      {/* ⭐️ 로딩 중에도 캘린더 틀은 보여주되, 흐리게 처리하거나 스피너를 띄움 */}
       {isLoading ? (
         <div className="flex items-center justify-center h-[60vh]">
           <LoadingSpinner />
         </div>
       ) : (
-        <CalendarView logs={logs} />
+        <CalendarView
+          logs={logs}
+          currentDate={currentDate}
+          onDateChange={setCurrentDate}
+        />
       )}
     </div>
   );

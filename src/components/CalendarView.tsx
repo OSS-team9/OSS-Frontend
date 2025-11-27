@@ -9,13 +9,16 @@ import { EmotionLog } from "@/types";
 import Card from "./Card";
 
 interface CalendarViewProps {
-  logs: EmotionLog[]; // 이번 달 데이터
+  logs: EmotionLog[];
+  currentDate: Date; // ⭐️ 부모로부터 현재 날짜를 받음
+  onDateChange: (newDate: Date) => void; // ⭐️ 날짜 변경 요청 함수
 }
 
-export default function CalendarView({ logs }: CalendarViewProps) {
-  // 현재 날짜 (기본값: 오늘)
-  const [currentDate, setCurrentDate] = useState(new Date());
-
+export default function CalendarView({
+  logs,
+  currentDate,
+  onDateChange,
+}: CalendarViewProps) {
   const now = new Date();
 
   // 이번 달의 정보 계산
@@ -44,10 +47,10 @@ export default function CalendarView({ logs }: CalendarViewProps) {
   }
 
   // 이전달/다음달 이동 함수
-  const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
+  const prevMonth = () => onDateChange(new Date(year, month - 1, 1));
   const nextMonth = () => {
     if (!isNextDisabled) {
-      setCurrentDate(new Date(year, month + 1, 1));
+      onDateChange(new Date(year, month + 1, 1));
     }
   };
 
