@@ -10,6 +10,7 @@ import EmotionHistory from "@/components/EmotionHistory";
 import { EmotionLog } from "@/types";
 import { toEnglishEmotion } from "@/utils/emotionUtils";
 import withAuth from "@/components/withAuth";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 function MainPage() {
   const { token, authFetch } = useAuth();
@@ -95,6 +96,14 @@ function MainPage() {
 
     fetchEmotions();
   }, [token]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-app-bg flex items-center justify-center pb-20">
+        <LoadingSpinner />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-app-bg">
