@@ -15,7 +15,7 @@ import FaceMeshProcessor from "@/components/FaceMeshProcessor";
 
 export default function CameraPage() {
   const router = useRouter();
-  const { token, login } = useAuth();
+  const { token, login, authFetch } = useAuth();
 
   // 1. 상태 관리 (단순화: tempImage 유무로 화면 전환)
   const [tempImage, setTempImage] = useState<string | null>(null);
@@ -98,15 +98,10 @@ export default function CameraPage() {
       }
 
       // 3. API 요청 (Content-Type 헤더 제거 필수!)
-      const response = await fetch(
+      const response = await authFetch(
         `${process.env.NEXT_PUBLIC_API_HOST}/emotions`,
         {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${userToken}`,
-            // ⚠️ 주의: Content-Type: 'multipart/form-data'를 직접 적으면 안 됩니다.
-            // 브라우저가 boundary와 함께 자동으로 설정하도록 놔둬야 합니다.
-          },
           body: formData,
         }
       );

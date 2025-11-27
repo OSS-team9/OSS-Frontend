@@ -12,7 +12,7 @@ import { toEnglishEmotion } from "@/utils/emotionUtils";
 import withAuth from "@/components/withAuth";
 
 function MainPage() {
-  const { token } = useAuth();
+  const { token, authFetch } = useAuth();
 
   const [logs, setLogs] = useState<EmotionLog[]>([]);
   const [todayData, setTodayData] = useState<EmotionLog | null>(null);
@@ -35,7 +35,7 @@ function MainPage() {
         const startDateStr = threeDaysAgo.toISOString().split("T")[0];
 
         // 2. API 호출
-        const response = await fetch(
+        const response = await authFetch(
           `${process.env.NEXT_PUBLIC_API_HOST}/emotions?start_date=${startDateStr}&end_date=${todayStr}`,
           {
             headers: { Authorization: `Bearer ${token}` },
