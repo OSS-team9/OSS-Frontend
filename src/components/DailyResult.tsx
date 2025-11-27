@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { IoShareSocialOutline } from "react-icons/io5";
+import Link from "next/link";
+import { IoShareSocialOutline, IoAdd, IoCameraOutline } from "react-icons/io5";
 import { getFormattedDate } from "@/utils/dateUtils";
 import { EmotionLog } from "@/types";
 import Card from "@/components/BorderCard";
@@ -11,15 +12,11 @@ interface DailyResultProps {
 }
 
 export default function DailyResult({ data }: DailyResultProps) {
-  // 데이터가 없으면 로딩 중 표시 (또는 빈 화면)
-  if (!data)
-    return (
-      <div className="text-white text-center">분석 결과 불러오는 중...</div>
-    );
+  const displayDate = data?.date || getFormattedDate();
 
-  const displayDate = data.date ? data.date : getFormattedDate();
-
-  const characterImage = `/emotions/${data.emotion}_${data.emotionLevel}.png`;
+  const characterImage = data
+    ? `/emotions/${data.emotion}_${data.emotionLevel}.png`
+    : "/images/question.png";
 
   return (
     <div className="w-full px-6 pb-5 bg-app-bg-secondary">
@@ -31,40 +28,61 @@ export default function DailyResult({ data }: DailyResultProps) {
 
       <div className="flex gap-5 h-64">
         {/* 왼쪽: 내 사진 (서버 URL) */}
-        <Card className="flex-1.8 bg-gray-300 relative">
-          <div className="w-full h-full relative aspect-3/4">
-            {data.imageUrl ? (
+        <Card className="flex-1.8 bg-[#FFF8E7] relative">
+          {data?.imageUrl ? (
+            // (A) 데이터 있음: 내 사진 표시
+            <div className="w-full h-full relative aspect-3/4">
               <Image
                 src={data.imageUrl}
                 alt="내 사진"
                 fill
                 className="object-cover"
               />
-            ) : (
-              <div className="w-full h-full bg-gray-300 flex items-center justify-center">
-                <span className="text-gray-500 text-sm">사진 없음</span>
+            </div>
+          ) : (
+            // (B) ⭐️ 데이터 없음: 기록 유도 UI (점선 테두리 효과)
+            <div className="w-full h-full p-2 aspect-3/4">
+              <div className="w-full h-full border-2 border-dashed border-[#8b7e66] rounded-2xl flex flex-col items-center justify-center relative">
+                {/* 카메라 아이콘 */}
+                <IoCameraOutline className="w-12 h-12 text-[#8b4513] mb-2" />
+
+                {/* 텍스트 */}
+                <div className="text-center font-bold text-[#3e2723] text-sm leading-tight">
+                  오늘의 표정을
+                  <br />
+                  남겨주세요 😉
+                </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
+          <Link
+            href="/camera"
+            className="absolute bottom-3 right-3 w-10 h-10 bg-[#A8815B] rounded-full flex items-center justify-center shadow-md hover:bg-[#8d7355] transition-colors"
+          >
+            <IoAdd className="w-6 h-6 text-white" />
+          </Link>
         </Card>
 
         {/* 오른쪽: 캐릭터 + 공유 버튼 */}
         <div className="flex-1 flex flex-col gap-5">
           {/* 캐릭터 이미지 */}
           <Card className="flex-1 relative bg-gray-200">
+            {/* 배경 이미지 (항상 보임) */}
             <Image
               src="/images/icon_background.png"
               alt="카드 배경"
               fill
-              className="object-cover" // 카드를 꽉 채움
+              className="object-cover"
             />
+
+            {/* 내용물 (캐릭터 또는 물음표) */}
             <div className="w-full h-full relative z-1 flex items-center justify-center">
               <Image
                 src={characterImage}
-                alt={`${data.emotion} character`}
-                width={120}
-                height={120}
-                className="object-contain"
+                alt={data ? `${data.emotion} character` : "기록 없음"}
+                width={data ? 120 : 100} // 크기 조절 (물음표는 조금 작게)
+                height={data ? 120 : 100}
+                className="object-contain drop-shadow-md"
               />
             </div>
           </Card>
