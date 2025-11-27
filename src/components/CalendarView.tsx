@@ -111,14 +111,21 @@ export default function CalendarView({
           const log = logs.find((l) => l.date === dateStr);
           const isToday = dateStr === todayStr;
 
-          // ⭐️ 클릭 시 이동할 경로 (데이터가 있든 없든 이동 가능하게)
-          const detailLink = `/calendar/detail/${dateStr}`;
+          const isClickable = !!log;
+
+          // 이동할 경로
+          const detailLink = isClickable ? `/calendar/detail/${dateStr}` : "#";
 
           return (
             <Link
               key={dateStr}
               href={detailLink}
-              className="flex flex-col items-center gap-1 group cursor-pointer"
+              className={`flex flex-col items-center gap-1 group 
+                          ${
+                            isClickable
+                              ? "cursor-pointer"
+                              : "pointer-events-none"
+                          }`}
             >
               {/* 날짜 숫자 */}
               <div
@@ -133,9 +140,6 @@ export default function CalendarView({
               {/* 감정 아이콘 또는 빈 원 */}
               <div className="relative w-10 h-10 transition-transform group-active:scale-95">
                 {log ? (
-                  // ⭐️ 기록 있음: 감정 아이콘 표시
-                  // (파일명 규칙: joy.png, sadness.png 등 - 레벨 없이 기본형 사용 가정)
-                  // (만약 레벨별 아이콘을 쓴다면 _${log.emotionLevel} 추가)
                   <Image
                     src={`/emotions/${log.emotion}.png`}
                     alt={log.emotion}
