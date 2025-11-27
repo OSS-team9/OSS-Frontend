@@ -140,6 +140,9 @@ export default function CalendarView({
               {/* 감정 아이콘 또는 빈 원 */}
               <div className="relative w-10 h-10 transition-transform group-active:scale-95">
                 {log ? (
+                  // ⭐️ 기록 있음: 감정 아이콘 표시
+                  // (파일명 규칙: joy.png, sadness.png 등 - 레벨 없이 기본형 사용 가정)
+                  // (만약 레벨별 아이콘을 쓴다면 _${log.emotionLevel} 추가)
                   <Image
                     src={`/emotions/${log.emotion}.png`}
                     alt={log.emotion}
