@@ -4,6 +4,8 @@ import Image from "next/image";
 import Card from "@/components/Card";
 import { EmotionLog } from "@/types";
 import { parseDate } from "@/utils/dateUtils";
+import Link from "next/link"; // ⭐️ Link 추가
+import { IoCalendarOutline } from "react-icons/io5"; // ⭐️ 달력 아이콘 추가
 
 const EMOTION_COLORS: Record<string, string> = {
   joy: "bg-joy-bg",
@@ -22,10 +24,20 @@ interface EmotionHistoryProps {
 
 export default function EmotionHistory({ logs }: EmotionHistoryProps) {
   return (
-    <Card className="px-6 py-4">
-      <div className="">
-        <h3 className="font-bold text-xl mb-2">감정 기록</h3>
-        <p className="text-sm text-gray-500">최근 감정 흐름입니다 :)</p>
+    <Card className="px-6 py-4 relative">
+      <div className="flex justify-between items-start mb-5">
+        <div>
+          <h3 className="font-bold text-xl mb-1 text-black">감정 기록</h3>
+          <p className="text-sm text-gray-500">최근 감정 흐름입니다 :)</p>
+        </div>
+
+        {/* ⭐️ 달력 아이콘 추가 (클릭 시 /calendar 이동) */}
+        <Link
+          href="/calendar"
+          className="p-2 -mr-2 rounded-full hover:bg-gray-100 transition-colors text-black/70"
+        >
+          <IoCalendarOutline size={24} />
+        </Link>
       </div>
 
       <div className="flex justify-between gap-4 mt-4">
