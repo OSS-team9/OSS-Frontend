@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "./AuthContext"; // ⭐️ 로그인 상태 확인
 import AppBar from "./AppBar";
 import BottomNav from "./BottomNav";
+import ProfileModal from "./ProfileModal";
 
 interface ClientLayoutProps {
   children: React.ReactNode;
@@ -14,6 +15,8 @@ interface ClientLayoutProps {
 export default function ClientLayout({ children }: ClientLayoutProps) {
   const pathname = usePathname();
   const { token } = useAuth(); // ⭐️ 토큰 가져오기
+
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   // 1. ⭐️ 무조건 숨길 경로 (랜딩 페이지)
   const alwaysHiddenRoutes = ["/"];
@@ -27,12 +30,20 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
   return (
     <div className="relative min-h-screen bg-[--color-app-bg]">
       {/* ⭐️ isHidden이 false일 때만 AppBar 표시 */}
-      {!isHidden && <AppBar />}
-      {/* ⭐️ isHidden이면 전체 화면(패딩 0), 아니면 위아래 여백(pt-16 pb-16) */}
+      {/* AppBar */}
+      {!isHidden && <AppBar onProfileClick={() => setIsProfileOpen(true)} />}
+
+      {/* 메인 콘텐츠 */}
       <main className={isHidden ? "" : "pt-16 pb-16"}>{children}</main>
 
-      {/* ⭐️ isHidden이 false일 때만 BottomNav 표시 */}
+      {/* BottomNav */}
       {!isHidden && <BottomNav />}
+
+      {/* ⭐️ 프로필 모달 */}
+      <ProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+      />
     </div>
   );
 }

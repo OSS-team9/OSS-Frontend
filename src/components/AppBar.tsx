@@ -1,16 +1,35 @@
-import localFont from "next/font/local";
+"use client";
+
+import { usePathname } from "next/navigation";
+import { IoPersonOutline } from "react-icons/io5"; // 프로필 아이콘
 
 interface AppBarProps {
-  onMenuToggle: () => void;
+  onProfileClick: () => void; // ⭐️ 클릭 핸들러 추가
 }
 
-export default function AppBar() {
+export default function AppBar({ onProfileClick }: AppBarProps) {
+  const pathname = usePathname();
+
+  // ⭐️ 프로필 아이콘을 보여줄 경로 (메인, 랜딩 등)
+  const showProfileIcon = ["/", "/main"].includes(pathname);
+
   return (
     <header className="fixed top-0 left-0 right-0 z-10 h-16 bg-app-bg-tertiary">
-      <div className="flex items-center justify-start h-full max-w-md px-6 mx-auto">
-        <h1 className={`text-base text-app-bg font-lotte`}>오늘:하루</h1>
-
-        <div className="w-6" />
+      <div className="flex items-center justify-between h-full max-w-md px-6 mx-auto">
+        {/* 1. 앱 이름 (왼쪽) */}
+        <h1 className="text-base font-bold text-app-bg font-lotte">
+          오늘:하루
+        </h1>
+        {/* 2. 프로필 아이콘 (오른쪽) */}
+        {showProfileIcon && (
+          <button
+            onClick={onProfileClick}
+            className="p-2 -mr-2 rounded-full hover:bg-gray-100 transition"
+          >
+            {/* ⭐️ 아이콘 색상을 'app-bg' (연한 갈색)으로 변경 */}
+            <IoPersonOutline size={24} className="text-app-bg" />
+          </button>
+        )}
       </div>
     </header>
   );
