@@ -24,9 +24,8 @@ export default function AppBar({ onProfileClick }: AppBarProps) {
         {showProfileIcon && (
           <button
             onClick={onProfileClick}
-            className="p-2 -mr-2 rounded-full hover:bg-gray-100 transition"
+            className="p-2 -mr-2 rounded-full transition"
           >
-            {/* ⭐️ 아이콘 색상을 'app-bg' (연한 갈색)으로 변경 */}
             <IoPersonOutline size={24} className="text-app-bg" />
           </button>
         )}
