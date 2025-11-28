@@ -7,6 +7,7 @@ import {
   DrawingUtils,
 } from "@mediapipe/tasks-vision";
 import Card from "@/components/common/BorderCard";
+import { useShareAndDownload } from "@/hooks/useShareAndDownload";
 
 interface FaceMeshProcessorProps {
   imageSrc: string;
@@ -98,6 +99,8 @@ export default function FaceMeshProcessor({
   const [isDrawingComplete, setIsDrawingComplete] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const { shareImage, downloadImage, canvasToBlob } = useShareAndDownload();
 
   // 'AI 모델 로드'
   useEffect(() => {
@@ -249,17 +252,11 @@ export default function FaceMeshProcessor({
   const handleDownload = () => {
     if (!canvasRef.current || !isDrawingComplete) return;
 
-    const canvas = canvasRef.current;
-    const dataUrl = canvas.toDataURL("image/png"); // 캔버스 내용을 PNG 데이터로 변환
-
+    const dataUrl = canvasRef.current.toDataURL("image/png");
     const today = new Date().toISOString().split("T")[0];
-    const filename = `오늘_하루_${today}.png`;
 
-    // 가상 링크(<a>)를 만들어서 다운로드 실행
-    const link = document.createElement("a");
-    link.href = dataUrl;
-    link.download = filename; // 다운로드될 파일 이름
-    link.click();
+    // 훅 함수 호출
+    downloadImage(dataUrl, `오늘:하루_${today}.png`);
   };
 
   // [공유 기능] Web Share API 사용

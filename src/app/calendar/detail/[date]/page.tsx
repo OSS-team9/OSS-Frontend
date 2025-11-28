@@ -12,6 +12,7 @@ import { EmotionLog } from "@/types";
 import { toEnglishEmotion } from "@/utils/emotionUtils";
 import Card from "@/components/common/BorderCard";
 import { getEmotionBgColor } from "@/utils/emotionUtils";
+import { useShareAndDownload } from "@/hooks/useShareAndDownload";
 
 // 날짜 포맷 (예: 11월 04일)
 function formatDateForDetail(dateString: string) {
@@ -38,6 +39,7 @@ function CalendarDetailPage() {
   const { token, authFetch } = useAuth();
   const [log, setLog] = useState<EmotionLog | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { shareImage } = useShareAndDownload();
 
   useEffect(() => {
     if (!token || !dateStr) return;
@@ -75,7 +77,24 @@ function CalendarDetailPage() {
   }, [token, dateStr, authFetch]);
 
   const headerDate = dateStr ? formatDateForDetail(dateStr) : "";
+  const handleShareClick = async () => {
+    if (log?.imageUrl) {
+      try {
+        // 이미지 URL을 Blob으로 변환
+        const response = await fetch(log.imageUrl);
+        const blob = await response.blob();
+        const file = new File([blob], "emotion_result.png", {
+          type: "image/png",
+        });
 
+        // 공유 함수 호출
+        shareImage(file);
+      } catch (error) {
+        console.error("이미지 변환 실패:", error);
+        alert("이미지를 공유할 수 없습니다.");
+      }
+    }
+  };
   return (
     // 1. ⭐️ 배경색 통일 (app-bg)
     <div className="min-h-screen bg-app-bg pt-6 px-4 pb-24">
@@ -148,7 +167,10 @@ function CalendarDetailPage() {
 
               {/* 하단 공유 버튼 */}
               <div className="flex justify-center">
-                <button className="p-2 bg-white rounded-full shadow-md text-black active:scale-95 transition">
+                <button
+                  className="p-2 bg-white rounded-full shadow-md text-black active:scale-95 transition"
+                  onClick={handleShareClick}
+                >
                   <IoShareSocialOutline size={20} />
                 </button>
               </div>

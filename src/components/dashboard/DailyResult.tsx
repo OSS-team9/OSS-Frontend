@@ -6,17 +6,38 @@ import { IoShareSocialOutline, IoAdd, IoCameraOutline } from "react-icons/io5";
 import { getFormattedDate } from "@/utils/dateUtils";
 import { EmotionLog } from "@/types";
 import Card from "@/components/common/BorderCard";
+import { useShareAndDownload } from "@/hooks/useShareAndDownload";
 
 interface DailyResultProps {
   data: EmotionLog | null;
 }
 
 export default function DailyResult({ data }: DailyResultProps) {
+  const { shareImage } = useShareAndDownload();
   const displayDate = data?.date || getFormattedDate();
 
   const characterImage = data
     ? `/emotions/${data.emotion}_${data.emotionLevel}.png`
     : "/images/question.png";
+
+  const handleShareClick = async () => {
+    if (data?.imageUrl) {
+      try {
+        // 이미지 URL을 Blob으로 변환
+        const response = await fetch(data.imageUrl);
+        const blob = await response.blob();
+        const file = new File([blob], "emotion_result.png", {
+          type: "image/png",
+        });
+
+        // 공유 함수 호출
+        shareImage(file);
+      } catch (error) {
+        console.error("이미지 변환 실패:", error);
+        alert("이미지를 공유할 수 없습니다.");
+      }
+    }
+  };
 
   return (
     <div className="w-full px-6 pb-5 bg-app-bg-secondary">
@@ -88,7 +109,10 @@ export default function DailyResult({ data }: DailyResultProps) {
           </Card>
 
           {/* 공유 버튼 */}
-          <button className="bg-white py-3 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform">
+          <button
+            className="bg-white py-3 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+            onClick={handleShareClick}
+          >
             <IoShareSocialOutline className="w-7 h-7 text-black" />
           </button>
         </div>
