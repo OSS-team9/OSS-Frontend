@@ -1,7 +1,11 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { IoPersonOutline } from "react-icons/io5"; // 프로필 아이콘
+import {
+  IoPersonOutline,
+  IoShareSocialOutline,
+  IoBookOutline,
+} from "react-icons/io5";
 
 interface AppBarProps {
   onProfileClick: () => void; // ⭐️ 클릭 핸들러 추가
@@ -10,8 +14,9 @@ interface AppBarProps {
 export default function AppBar({ onProfileClick }: AppBarProps) {
   const pathname = usePathname();
 
-  // ⭐️ 프로필 아이콘을 보여줄 경로 (메인, 랜딩 등)
-  const showProfileIcon = ["/", "/main"].includes(pathname);
+  // 1. 현재 페이지 상태 확인
+  const isHousePage = pathname === "/house";
+  const isMainPage = pathname === "/main";
 
   return (
     <header className="fixed top-0 left-0 right-0 z-10 h-16 bg-app-bg-tertiary">
@@ -20,15 +25,35 @@ export default function AppBar({ onProfileClick }: AppBarProps) {
         <h1 className="text-base font-bold text-app-bg font-lotte">
           오늘:하루
         </h1>
-        {/* 2. 프로필 아이콘 (오른쪽) */}
-        {showProfileIcon && (
-          <button
-            onClick={onProfileClick}
-            className="p-2 -mr-2 rounded-full transition"
-          >
-            <IoPersonOutline size={24} className="text-app-bg" />
-          </button>
-        )}
+
+        <div className="flex items-center gap-1">
+          {isHousePage && (
+            <>
+              <button
+                className="p-2 rounded-full transition"
+                onClick={() => console.log("공유 클릭")}
+              >
+                <IoShareSocialOutline size={24} className="text-app-bg" />
+              </button>
+              <button
+                className="p-2 -mr-2 rounded-full transition"
+                onClick={() => console.log("아카이브 클릭")}
+              >
+                <IoBookOutline size={24} className="text-app-bg" />
+              </button>
+            </>
+          )}
+
+          {/* 2. 프로필 아이콘 (오른쪽) */}
+          {isMainPage && onProfileClick && (
+            <button
+              onClick={onProfileClick}
+              className="p-2 -mr-2 rounded-full transition"
+            >
+              <IoPersonOutline size={24} className="text-app-bg" />
+            </button>
+          )}
+        </div>
       </div>
     </header>
   );

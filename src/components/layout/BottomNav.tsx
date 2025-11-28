@@ -8,9 +8,9 @@ import {
   HiOutlineHome, // 🏠 (Outline)
   HiPlusCircle, // ➕ (Solid)
   HiOutlinePlusCircle, // ➕ (Outline)
-  HiUser, // 👤 (Solid)
-  HiOutlineUser, // 👤 (Outline)
 } from "react-icons/hi2";
+
+import { RiSofaLine, RiSofaFill } from "react-icons/ri";
 
 export default function BottomNav() {
   const pathname = usePathname(); // 훅을 사용해 현재 URL 경로를 가져옵니다.
@@ -37,11 +37,11 @@ export default function BottomNav() {
           )}
         </Link>
 
-        <Link href="/third" className={iconWrapperStyle}>
-          {pathname === "/third" ? (
-            <HiUser className={`${iconStyle} `} />
+        <Link href="/house" className={iconWrapperStyle}>
+          {pathname === "/house" ? (
+            <RiSofaFill className={`${iconStyle} `} />
           ) : (
-            <HiOutlineUser className={`${iconStyle} `} />
+            <RiSofaLine className={`${iconStyle} `} />
           )}
         </Link>
       </div>
