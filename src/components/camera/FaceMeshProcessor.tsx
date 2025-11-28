@@ -307,19 +307,16 @@ export default function FaceMeshProcessor({
     <div className="w-full h-full">
       <div className="w-full p-4 bg-app-bg-secondary">
         <Card className="mobile-container bg-gray-200">
-          {/* 모델 로딩 중 메시지 */}
           {!faceLandmarker && (
             <div className="text-center p-4">
               <p>AI 모델을 로드 중입니다...</p>
             </div>
           )}
 
-          {/* FaceMesh가 그려질 캔버스 */}
           <div className="aspect-3/4">
             <canvas ref={canvasRef} className="w-full h-full" />
           </div>
 
-          {/* '감지 실패' 상태일 때만 에러 메시지 */}
           {detectionFailed && (
             <div className="text-center p-4 my-2 bg-red-100 border border-red-400 text-red-700 rounded-lg">
               <p className="font-bold">얼굴을 감지할 수 없습니다.</p>
@@ -328,64 +325,73 @@ export default function FaceMeshProcessor({
           )}
         </Card>
 
-        {/* '다시 찍기' 버튼 (모델 로드가 완료된 후에만 표시) */}
-        <div className="flex justify-center mt-4 space-x-4 pb-1">
-          {onSaveRequest && (
-            <button
-              onClick={onSaveRequest}
-              disabled={!isDrawingComplete || isSaving}
-              className="w-full py-4 bg-blue-600 text-white font-bold rounded-2xl shadow-md
-                       hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 transition"
-            >
-              {/* ⭐️ 버튼 텍스트 분기 처리 */}
-              {isSaving ? (
-                <>
-                  <span className="animate-spin mr-2">⏳</span> 저장 중...
-                </>
-              ) : isDrawingComplete ? (
-                isLoggedIn ? (
-                  "결과 저장하기"
-                ) : (
-                  "결과 저장하기 (로그인)"
-                )
-              ) : (
-                "분석 중..."
-              )}
-            </button>
-          )}
-          {faceLandmarker && !detectionFailed && (
+        <div className="flex items-center justify-between mt-6 gap-3 w-full max-w-md mx-auto">
+          {/* 1. [다시 촬영 버튼] (왼쪽) */}
+          {/* 순서를 바꿨습니다: '취소/다시'가 보통 왼쪽, '확인/저장'이 오른쪽에 위치하는 것이 일반적입니다. */}
+          {faceLandmarker && (
             <button
               onClick={onRetake}
               disabled={isSaving}
-              className="w-80 px-6 py-3 bg-white text-black 
-                     rounded-full hover:bg-gray-100 "
+              className="flex-1 py-4 
+                         bg-[#F5EFE6] text-[#56412C]
+                         font-semibold rounded-2xl shadow-md 
+                         hover:bg-[#EADCC7] transition-all
+                         disabled:opacity-50"
             >
-              다시 촬영 / 선택
+              다시 촬영
             </button>
           )}
+
+          {/* 2. [저장 버튼] (오른쪽) */}
+          {onSaveRequest && !detectionFailed ? (
+            <button
+              onClick={onSaveRequest}
+              disabled={!isDrawingComplete || isSaving}
+              className="flex-1 py-4 
+                         bg-app-bg-tertiary text-white 
+                         font-bold rounded-2xl shadow-md 
+                         hover:bg-[#3E2E1E] transition-all
+                         disabled:bg-[#8D7B68] disabled:text-[#B0A695]"
+            >
+              {isSaving
+                ? "저장 중..."
+                : isDrawingComplete
+                ? isLoggedIn
+                  ? "저장하기"
+                  : "로그인/저장"
+                : "분석 중..."}
+            </button>
+          ) : // (버튼 갯수 유지를 위한 빈 공간 - 레이아웃 흔들림 방지용)
+          null}
         </div>
       </div>
-      <div className="w-full p-4 mt-4 bg-app-bg-secondary">
-        <div className="flex flex-col items-center space-y-4 w-full">
-          <button
-            onClick={handleShare}
-            disabled={!isDrawingComplete}
-            className="w-80 px-6 py-3 font-bold text-white bg-pink-500 rounded-full 
-                        hover:bg-pink-600 disabled:bg-gray-400"
-          >
-            공유하기
-          </button>
-          <button
-            onClick={handleDownload}
-            disabled={!isDrawingComplete}
-            className="w-80 px-6 py-3 bg-blue-500 text-white
-                     font-semibold rounded-full shadow-md 
-                     hover:bg-blue-600 disabled:bg-gray-400"
-          >
-            {isDrawingComplete ? "결과 다운로드" : "분석 결과 그리는 중..."}
-          </button>
+
+      {/* 3. ⭐️ [하단 공유/다운로드 영역] 감지 성공(!detectionFailed)일 때만 표시 */}
+      {!detectionFailed && (
+        <div className="w-full px-4 py-6 mt-4 bg-app-bg-secondary">
+          <div className="flex flex-col items-center space-y-4 w-full">
+            <button
+              onClick={handleShare}
+              className="w-full max-w-sm py-3.5 
+                         bg-white border-2 border-app-bg-secondary text-app-bg-secondary
+                         font-semibold rounded-2xl shadow-sm
+                         hover:bg-[#FAF7F2] transition-all"
+            >
+              공유하기
+            </button>
+
+            <button
+              onClick={handleDownload}
+              className="w-full max-w-sm py-3.5
+                         bg-[#F5EFE6] text-[#56412C]
+                         font-semibold rounded-2xl shadow-sm
+                         hover:bg-[#EADCC7]"
+            >
+              이미지로 다운로드
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
