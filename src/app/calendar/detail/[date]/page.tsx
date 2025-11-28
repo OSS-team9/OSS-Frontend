@@ -5,12 +5,12 @@ import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
 import { IoChevronBack, IoShareSocialOutline } from "react-icons/io5";
 
-import withAuth from "@/components/withAuth";
-import { useAuth } from "@/components/AuthContext";
-import LoadingSpinner from "@/components/LoadingSpinner";
+import withAuth from "@/components/auth/withAuth";
+import { useAuth } from "@/components/auth/AuthContext";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { EmotionLog } from "@/types";
 import { toEnglishEmotion } from "@/utils/emotionUtils";
-import Card from "@/components/BorderCard";
+import Card from "@/components/common/BorderCard";
 
 // 날짜 포맷 (예: 11월 04일)
 function formatDateForDetail(dateString: string) {

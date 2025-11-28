@@ -6,7 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { IoChevronBack, IoChevronForward } from "react-icons/io5";
 import { EmotionLog } from "@/types";
-import Card from "./Card";
+import Card from "../common/Card";
 
 interface CalendarViewProps {
   logs: EmotionLog[];

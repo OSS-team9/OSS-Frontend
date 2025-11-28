@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/components/AuthContext";
+import { useAuth } from "@/components/auth/AuthContext";
 
 // ⭐️ 어떤 컴포넌트(Component)를 받아서, 기능이 추가된 새 컴포넌트를 반환합니다.
 export default function withAuth(Component: React.ComponentType<any>) {

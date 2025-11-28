@@ -3,10 +3,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import withAuth from "@/components/withAuth";
-import { useAuth } from "@/components/AuthContext";
-import CalendarView from "@/components/CalendarView";
-import LoadingSpinner from "@/components/LoadingSpinner";
+import withAuth from "@/components/auth/withAuth";
+import { useAuth } from "@/components/auth/AuthContext";
+import CalendarView from "@/components/calendar/CalendarView";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { EmotionLog } from "@/types";
 import { toEnglishEmotion } from "@/utils/emotionUtils";
 

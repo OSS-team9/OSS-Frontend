@@ -3,10 +3,10 @@
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { useAuth } from "./AuthContext"; // ⭐️ 로그인 상태 확인
+import { useAuth } from "../auth/AuthContext"; // ⭐️ 로그인 상태 확인
 import AppBar from "./AppBar";
 import BottomNav from "./BottomNav";
-import ProfileModal from "./ProfileModal";
+import ProfileModal from "../auth/ProfileModal";
 
 interface ClientLayoutProps {
   children: React.ReactNode;

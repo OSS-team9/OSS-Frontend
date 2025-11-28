@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Card from "@/components/Card";
+import Card from "@/components/common/Card";
 import { EmotionLog } from "@/types";
 import { parseDate } from "@/utils/dateUtils";
 import Link from "next/link"; // ⭐️ Link 추가

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { IoShareSocialOutline, IoAdd, IoCameraOutline } from "react-icons/io5";
 import { getFormattedDate } from "@/utils/dateUtils";
 import { EmotionLog } from "@/types";
-import Card from "@/components/BorderCard";
+import Card from "@/components/common/BorderCard";
 
 interface DailyResultProps {
   data: EmotionLog | null;

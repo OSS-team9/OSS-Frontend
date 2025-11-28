@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { GoogleLogin } from "@react-oauth/google";
-import { useAuth } from "@/components/AuthContext";
+import { useAuth } from "@/components/auth/AuthContext";
 
 export default function LoginPage() {
   // 전역 저장소(AuthContext)에서 'token'과 'login/logout' 함수를 가져옴

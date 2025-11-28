@@ -4,14 +4,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { GoogleLogin } from "@react-oauth/google";
-import { useAuth } from "@/components/AuthContext";
+import { useAuth } from "@/components/auth/AuthContext";
 import { IoClose } from "react-icons/io5";
 import { toKoreanEmotion } from "@/utils/emotionUtils";
 import { dataURLtoFile } from "@/utils/fileUtils";
 
-import WebCamera from "@/components/WebCamera";
-import PhotoUploader from "@/components/PhotoUploader";
-import FaceMeshProcessor from "@/components/FaceMeshProcessor";
+import WebCamera from "@/components/camera/WebCamera";
+import PhotoUploader from "@/components/camera/PhotoUploader";
+import FaceMeshProcessor from "@/components/camera/FaceMeshProcessor";
 
 export default function CameraPage() {
   const router = useRouter();
@@ -199,7 +199,7 @@ export default function CameraPage() {
 
           {/* 로그인 유도 모달 */}
           {showLoginModal && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm w-screen h-screen">
+            <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/60 backdrop-blur-sm w-screen h-screen">
               <div className="bg-white p-6 rounded-2xl shadow-2xl text-center w-full max-w-xs border-2 border-white relative m-4">
                 {/* ⭐️ X 버튼: 이제 모달만 닫습니다 */}
                 <button

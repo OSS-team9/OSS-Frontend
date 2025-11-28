@@ -4,9 +4,9 @@ import "./globals.css";
 
 // 구글 로그인
 import { GoogleOAuthProvider } from "@react-oauth/google";
-import { AuthProvider } from "@/components/AuthContext";
+import { AuthProvider } from "@/components/auth/AuthContext";
 
-import ClientLayout from "@/components/ClientLayout";
+import ClientLayout from "@/components/layout/ClientLayout";
 
 const lotteFont = localFont({
   src: "../../public/fonts/SEOLLEIMcool.woff2",

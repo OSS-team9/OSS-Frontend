@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import Card from "@/components/BorderCard";
+import Card from "@/components/common/BorderCard";
 
 interface WebCameraProps {
   onCapture: (imageSrc: string) => void;

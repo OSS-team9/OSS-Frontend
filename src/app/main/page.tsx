@@ -3,14 +3,14 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useAuth } from "@/components/AuthContext";
+import { useAuth } from "@/components/auth/AuthContext";
 
-import DailyResult from "@/components/DailyResult";
-import EmotionHistory from "@/components/EmotionHistory";
+import DailyResult from "@/components/dashboard/DailyResult";
+import EmotionHistory from "@/components/dashboard/EmotionHistory";
 import { EmotionLog } from "@/types";
 import { toEnglishEmotion } from "@/utils/emotionUtils";
-import withAuth from "@/components/withAuth";
-import LoadingSpinner from "@/components/LoadingSpinner";
+import withAuth from "@/components/auth/withAuth";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
 
 function MainPage() {
   const { token, authFetch } = useAuth();
