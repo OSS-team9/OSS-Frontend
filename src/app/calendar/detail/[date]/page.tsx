@@ -11,6 +11,7 @@ import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { EmotionLog } from "@/types";
 import { toEnglishEmotion } from "@/utils/emotionUtils";
 import Card from "@/components/common/BorderCard";
+import { getEmotionBgColor } from "@/utils/emotionUtils";
 
 // 날짜 포맷 (예: 11월 04일)
 function formatDateForDetail(dateString: string) {
@@ -127,7 +128,11 @@ function CalendarDetailPage() {
               {/* 중앙 캐릭터 */}
               <div className="flex flex-col items-center">
                 {/* 분홍색 원형 배경 */}
-                <div className="w-20 h-20 rounded-full bg-pink-100 flex items-center justify-center mb-2 relative overflow-hidden">
+                <div
+                  className={`w-20 h-20 rounded-full ${getEmotionBgColor(
+                    log.emotion
+                  )} flex items-center justify-center mb-2 relative overflow-hidden`}
+                >
                   <Image
                     src={`/emotions/${log.emotion}_${log.emotionLevel}.png`}
                     alt={log.emotion}

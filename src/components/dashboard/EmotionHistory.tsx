@@ -5,17 +5,8 @@ import Card from "@/components/common/Card";
 import { EmotionLog } from "@/types";
 import { parseDate } from "@/utils/dateUtils";
 import Link from "next/link"; // ⭐️ Link 추가
-import { IoCalendarOutline } from "react-icons/io5"; // ⭐️ 달력 아이콘 추가
-
-const EMOTION_COLORS: Record<string, string> = {
-  joy: "bg-joy-bg",
-  panic: "bg-panic-bg",
-  anger: "bg-anger-bg",
-  anxiety: "bg-anxiety-bg",
-  hurt: "bg-hurt-bg",
-  sadness: "bg-sadness-bg",
-  neutral: "bg-neutral-bg",
-};
+import { IoCalendarOutline } from "react-icons/io5";
+import { getEmotionBgColor } from "@/utils/emotionUtils";
 
 // ⭐️ Props 정의: 부모로부터 로그 리스트를 받음
 interface EmotionHistoryProps {
@@ -54,7 +45,7 @@ export default function EmotionHistory({ logs }: EmotionHistoryProps) {
           // 빈 상태는 점선 테두리, 데이터 상태는 색상 배경 + 그림자
           const appearanceStyle = isEmpty
             ? "border-2 border-dashed border-gray-200 bg-gray-50"
-            : `shadow-sm ${EMOTION_COLORS[item.emotion] || "bg-gray-100"}`;
+            : `shadow-sm ${getEmotionBgColor(item.emotion) || "bg-gray-100"}`;
 
           // 3. ⭐️ 텍스트 색상
           const titleColor = isEmpty ? "text-gray-300" : "text-black/80";

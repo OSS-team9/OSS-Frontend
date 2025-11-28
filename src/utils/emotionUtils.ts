@@ -20,6 +20,16 @@ const EMOTION_MAP_EN: Record<string, string> = {
   중립: "neutral",
 };
 
+const EMOTION_COLORS: Record<string, string> = {
+  joy: "bg-joy-bg",
+  panic: "bg-panic-bg",
+  anger: "bg-anger-bg",
+  anxiety: "bg-anxiety-bg",
+  hurt: "bg-hurt-bg",
+  sadness: "bg-sadness-bg",
+  neutral: "bg-neutral-bg",
+};
+
 /**
  * 영어 감정(joy)을 한글(기쁨)로 변환합니다.
  * 매칭되는 값이 없으면 기본값 '중립'을 반환합니다.
@@ -34,4 +44,8 @@ export function toKoreanEmotion(emotionEn: string): string {
  */
 export function toEnglishEmotion(emotionKo: string): string {
   return EMOTION_MAP_EN[emotionKo] || "neutral";
+}
+
+export function getEmotionBgColor(emotion: string): string {
+  return EMOTION_COLORS[emotion] || "bg-gray-100";
 }
