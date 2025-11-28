@@ -57,7 +57,8 @@ export default function CameraPage() {
     userToken: string,
     emotionEn: string,
     level: number,
-    imageToUpload?: string
+    imageToUpload?: string,
+    manualToken?: string
   ) => {
     setIsSaving(true);
     try {
@@ -98,13 +99,29 @@ export default function CameraPage() {
       }
 
       // 3. API 요청 (Content-Type 헤더 제거 필수!)
-      const response = await authFetch(
-        `${process.env.NEXT_PUBLIC_API_HOST}/emotions`,
-        {
+      let response;
+
+      if (manualToken) {
+        // [Case A] 방금 로그인 함 -> 수동 fetch (새 토큰 사용)
+        response = await fetch(`${process.env.NEXT_PUBLIC_API_HOST}/emotions`, {
           method: "POST",
+          headers: {
+            Authorization: `Bearer ${manualToken}`,
+          },
           body: formData,
-        }
-      );
+        });
+      } else {
+        response = await authFetch(
+          `${process.env.NEXT_PUBLIC_API_HOST}/emotions`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            body: formData,
+          }
+        );
+      }
 
       if (!response.ok) {
         const errData = await response.json();
@@ -143,7 +160,8 @@ export default function CameraPage() {
           data.access_token,
           analyzedResult.emotion,
           analyzedResult.level,
-          finalProcessedImage
+          finalProcessedImage,
+          data.access_token
         );
       }
     } catch (err) {
