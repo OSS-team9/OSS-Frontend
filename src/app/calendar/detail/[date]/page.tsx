@@ -9,7 +9,7 @@ import withAuth from "@/components/auth/withAuth";
 import { useAuth } from "@/components/auth/AuthContext";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { EmotionLog } from "@/types";
-import { toEnglishEmotion } from "@/utils/emotionUtils";
+import { toEnglishEmotion, toKoreanEmotion } from "@/utils/emotionUtils";
 import Card from "@/components/common/BorderCard";
 import { getEmotionBgColor } from "@/utils/emotionUtils";
 import { useShareAndDownload } from "@/hooks/useShareAndDownload";
@@ -19,17 +19,6 @@ function formatDateForDetail(dateString: string) {
   const [year, month, day] = dateString.split("-").map(Number);
   return `${month}월 ${day}일`;
 }
-
-// 감정 한글 이름
-const EMOTION_LABEL: Record<string, string> = {
-  joy: "기쁨",
-  panic: "당황",
-  anger: "분노",
-  anxiety: "불안",
-  hurt: "상처",
-  sadness: "슬픔",
-  neutral: "중립",
-};
 
 function CalendarDetailPage() {
   const router = useRouter();
@@ -161,7 +150,7 @@ function CalendarDetailPage() {
                   />
                 </div>
                 <span className="text-gray-500 font-bold bg-gray-100 px-3 py-1 rounded-md text-sm">
-                  {EMOTION_LABEL[log.emotion] || log.emotion}
+                  {toKoreanEmotion(log.emotion)}
                 </span>
               </div>
 
