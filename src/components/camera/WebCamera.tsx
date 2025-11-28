@@ -2,6 +2,12 @@
 
 import { useState, useRef, useEffect } from "react";
 import Card from "@/components/common/BorderCard";
+import {
+  IoCameraReverseOutline,
+  IoRadioButtonOn,
+  IoStopCircleOutline,
+  IoCameraOutline,
+} from "react-icons/io5"; // ⭐️ 아이콘 추가
 
 interface WebCameraProps {
   onCapture: (imageSrc: string) => void;
@@ -122,39 +128,60 @@ export default function WebCamera({ onCapture }: WebCameraProps) {
             muted
           />
           {!isCameraOn && (
-            <div className="flex items-center justify-center w-full h-full bg-gray-200">
-              <span className="text-gray-500">카메라가 꺼져있습니다.</span>
+            <div className="flex flex-col items-center justify-center w-full h-full bg-gray-200">
+              <IoCameraOutline size={48} className="mb-2 opacity-50" />
+              <span className="text-sm font-medium">카메라가 꺼져있습니다</span>
             </div>
           )}
         </div>
       </Card>
-      <div className="flex justify-center mt-4 space-x-4 pb-1">
+      <div className="flex justify-center mt-6 w-full max-w-md mx-auto">
         {isCameraOn ? (
-          <>
+          <div className="flex items-center justify-between w-full gap-3">
+            {/* 1. 전환 버튼 (Secondary Style) */}
             <button
               onClick={toggleFacingMode}
-              className="px-4 py-3 text-black bg-white rounded-full hover:bg-gray-100 flex-1"
+              className="flex-1 py-4 
+                         bg-[#F5EFE6] text-[#56412C] 
+                         font-semibold rounded-2xl shadow-sm
+                         hover:bg-[#EADCC7] transition-all flex items-center justify-center gap-2"
             >
-              {facingMode === "user" ? "후면 전환" : "전면 전환"}
+              <IoCameraReverseOutline size={20} />
+              전환
             </button>
+
+            {/* 2. 촬영 버튼 (Primary Style - 가장 강조) */}
             <button
               onClick={takeSnapshot}
-              className="px-4 py-3 text-black bg-white rounded-full hover:bg-gray-100 flex-1"
+              className="flex-[1.5] py-4
+                         bg-app-bg-tertiary text-white 
+                         font-bold rounded-2xl shadow-lg 
+                         hover:bg-[#3E2E1E] hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
             >
-              사진 찍기
+              <IoRadioButtonOn size={20} />
+              촬영
             </button>
+
+            {/* 3. 중지 버튼 (Secondary Style) */}
             <button
               onClick={stopCamera}
-              className="px-4 py-3 text-black bg-white rounded-full hover:bg-gray-100 flex-1"
+              className="flex-1 py-4 
+                         bg-[#F5EFE6] text-[#56412C] 
+                         font-semibold rounded-2xl shadow-sm
+                         hover:bg-[#EADCC7] transition-all flex items-center justify-center gap-2"
             >
+              <IoStopCircleOutline size={22} />
               중지
             </button>
-          </>
+          </div>
         ) : (
-          // 카메라가 꺼져있을 때 '카메라 켜기' 버튼만 표시
+          // 4. 카메라 켜기 (Primary Style)
           <button
             onClick={() => startCamera()}
-            className="w-80 py-3 px-6 text-black bg-white rounded-full hover:bg-gray-100"
+            className="w-full max-w-xs py-4 
+                       bg-app-bg-tertiary text-white 
+                       font-bold rounded-2xl shadow-lg 
+                       hover:bg-[#3E2E1E] hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
           >
             카메라 켜기
           </button>

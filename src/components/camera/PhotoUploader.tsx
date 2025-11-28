@@ -24,27 +24,26 @@ export default function PhotoUploader({ onCapture }: PhotoUploaderProps) {
   };
 
   return (
-    <div className="w-full py-6 mx-auto bg-app-bg-secondary">
-      <div className="text-center mx-4">
-        {/*  <label>을 사용해 <input> 버튼을 꾸밉니다. */}
-        <label
-          htmlFor="photo-upload"
-          className="cursor-pointer w-80 max-w-xs px-6 py-3 mx-auto 
-                     bg-white text-black 
-                     rounded-full hover:bg-gray-100 block"
-        >
-          갤러리에서 사진 선택
-        </label>
+    // 1. WebCamera와 동일한 배경색/패딩 제거 (부모 레이아웃 위임)
+    <div className="w-full max-w-md mx-auto bg-app-bg-secondary py-6">
+      <label
+        htmlFor="photo-upload"
+        className="cursor-pointer w-full max-w-xs py-4 mx-auto
+                   bg-white text-black font-bold 
+                   rounded-2xl shadow-lg 
+                   hover:bg-[#3E2E1E] hover:text-white hover:-translate-y-0.5 transition-all 
+                   flex items-center justify-center gap-2"
+      >
+        갤러리에서 사진 선택
+      </label>
 
-        {/* 'file' 타입의 <input> 태그 */}
-        <input
-          id="photo-upload"
-          type="file"
-          accept="image/*" // 이미지 파일만 받음
-          onChange={handleFileChange}
-          className="hidden" // 숨김
-        />
-      </div>
+      <input
+        id="photo-upload"
+        type="file"
+        accept="image/*"
+        onChange={handleFileChange}
+        className="hidden"
+      />
     </div>
   );
 }
