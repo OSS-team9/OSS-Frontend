@@ -90,7 +90,7 @@ export default function DailyResult({ data }: DailyResultProps) {
           <Card className="flex-1 relative bg-gray-200">
             {/* 배경 이미지 (항상 보임) */}
             <Image
-              src="/images/icon_background.png"
+              src="/images/mood_room.png"
               alt="카드 배경"
               fill
               className="object-cover"
