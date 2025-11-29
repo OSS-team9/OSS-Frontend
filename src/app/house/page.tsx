@@ -5,6 +5,8 @@ import Image from "next/image";
 
 import withAuth from "@/components/auth/withAuth"; // 로그인 보호
 import BorderCard from "@/components/common/BorderCard"; // ⭐️ 액자 스타일 재사용
+// 1. ⭐️ 스티커 보드 import
+import EmotionStickerBoard from "@/components/house/EmotionStickerBoard";
 
 function HousePage() {
   const router = useRouter();
@@ -32,6 +34,7 @@ function HousePage() {
           />
         </div>
       </BorderCard>
+      <EmotionStickerBoard />
     </div>
   );
 }
