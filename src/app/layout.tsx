@@ -5,6 +5,7 @@ import "./globals.css";
 // 구글 로그인
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { AuthProvider } from "@/components/auth/AuthContext";
+import { EmotionProvider } from "@/components/auth/EmotionContext";
 
 import ClientLayout from "@/components/layout/ClientLayout";
 
@@ -63,7 +64,9 @@ export default function RootLayout({
       <body className={pretendard.className}>
         <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
           <AuthProvider>
-            <ClientLayout>{children}</ClientLayout>
+            <EmotionProvider>
+              <ClientLayout>{children}</ClientLayout>
+            </EmotionProvider>
           </AuthProvider>
         </GoogleOAuthProvider>
       </body>

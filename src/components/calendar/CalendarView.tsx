@@ -1,12 +1,13 @@
 // src/components/CalendarView.tsx
 "use client";
 
-import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { IoChevronBack, IoChevronForward } from "react-icons/io5";
 import { EmotionLog } from "@/types";
-import Card from "../common/Card";
+import Card from "@/components/common/Card";
+import { useEmotion } from "@/components/auth/EmotionContext";
 
 interface CalendarViewProps {
   logs: EmotionLog[];
@@ -19,6 +20,9 @@ export default function CalendarView({
   currentDate,
   onDateChange,
 }: CalendarViewProps) {
+  const router = useRouter();
+  const { setSelectedLog } = useEmotion(); // ⭐️ 훅 사용
+
   const now = new Date();
 
   // 이번 달의 정보 계산
@@ -59,6 +63,12 @@ export default function CalendarView({
   const todayMonth = String(now.getMonth() + 1).padStart(2, "0");
   const todayDay = String(now.getDate()).padStart(2, "0");
   const todayStr = `${todayYear}-${todayMonth}-${todayDay}`;
+
+  const handleDayClick = (dateStr: string, log: EmotionLog) => {
+    // ⭐️ Context(메모리)에 저장 (에러 안 남)
+    setSelectedLog(log);
+    router.push(`/calendar/detail/${dateStr}`);
+  };
 
   return (
     <Card className="bg-[#f5ebd8]">
@@ -117,9 +127,9 @@ export default function CalendarView({
           const detailLink = isClickable ? `/calendar/detail/${dateStr}` : "#";
 
           return (
-            <Link
+            <div
               key={dateStr}
-              href={detailLink}
+              onClick={() => isClickable && log && handleDayClick(dateStr, log)}
               className={`flex flex-col items-center gap-1 group 
                           ${
                             isClickable
@@ -154,7 +164,7 @@ export default function CalendarView({
                   <div className="w-10 h-10 rounded-full bg-black/20" />
                 )}
               </div>
-            </Link>
+            </div>
           );
         })}
       </div>

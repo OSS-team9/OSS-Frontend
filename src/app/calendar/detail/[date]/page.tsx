@@ -13,6 +13,7 @@ import { toEnglishEmotion, toKoreanEmotion } from "@/utils/emotionUtils";
 import Card from "@/components/common/BorderCard";
 import { getEmotionBgColor } from "@/utils/emotionUtils";
 import { useShareAndDownload } from "@/hooks/useShareAndDownload";
+import { useEmotion } from "@/components/auth/EmotionContext";
 
 // 날짜 포맷 (예: 11월 04일)
 function formatDateForDetail(dateString: string) {
@@ -26,6 +27,8 @@ function CalendarDetailPage() {
   const dateStr = params.date as string;
 
   const { token, authFetch } = useAuth();
+  const { selectedLog } = useEmotion();
+
   const [log, setLog] = useState<EmotionLog | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { shareImage } = useShareAndDownload();
@@ -33,7 +36,19 @@ function CalendarDetailPage() {
   useEffect(() => {
     if (!token || !dateStr) return;
 
-    const fetchDetail = async () => {
+    const loadData = async () => {
+      setIsLoading(true);
+
+      // 1. ⭐️ 메모리(Context)에 데이터가 있고 날짜가 맞으면 바로 사용
+      if (selectedLog && selectedLog.date === dateStr) {
+        console.log("🚀 메모리 데이터 사용 (서버 요청 X)");
+        setLog(selectedLog);
+        setIsLoading(false);
+        return;
+      }
+
+      // 2. 없으면(새로고침 등) 서버 요청
+      console.log("🌐 서버에서 데이터를 불러옵니다...");
       try {
         const response = await authFetch(
           `${process.env.NEXT_PUBLIC_API_HOST}/emotions?start_date=${dateStr}&end_date=${dateStr}`
@@ -62,8 +77,8 @@ function CalendarDetailPage() {
       }
     };
 
-    fetchDetail();
-  }, [token, dateStr, authFetch]);
+    loadData();
+  }, [token, dateStr, authFetch, selectedLog]);
 
   const headerDate = dateStr ? formatDateForDetail(dateStr) : "";
   const handleShareClick = async () => {
