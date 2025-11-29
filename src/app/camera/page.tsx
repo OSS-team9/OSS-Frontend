@@ -12,6 +12,7 @@ import { dataURLtoFile } from "@/utils/fileUtils";
 import WebCamera from "@/components/camera/WebCamera";
 import PhotoUploader from "@/components/camera/PhotoUploader";
 import FaceMeshProcessor from "@/components/camera/FaceMeshProcessor";
+import { useEmotion } from "@/components/auth/EmotionContext";
 
 export default function CameraPage() {
   const router = useRouter();
@@ -31,6 +32,8 @@ export default function CameraPage() {
   const [isSaving, setIsSaving] = useState(false);
 
   const [showLoginModal, setShowLoginModal] = useState(false);
+
+  const { invalidateCache } = useEmotion();
 
   // 3. 촬영/업로드 완료 핸들러
   const handleCapture = (imageSrc: string) => {
@@ -128,9 +131,12 @@ export default function CameraPage() {
         throw new Error(errData.error || "저장 실패");
       }
 
-      console.log("서버 저장 완료:", { response });
+      console.log("서버 저장 완료");
+
+      invalidateCache();
+
       alert("저장되었습니다!");
-      router.push("/main"); // 메인으로 이동
+      router.push("/main");
     } catch (e) {
       console.error(e);
       alert("저장 중 오류가 발생했습니다.");

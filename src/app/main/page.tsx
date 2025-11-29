@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/auth/AuthContext";
+import { useEmotion } from "@/components/auth/EmotionContext";
 
 import DailyResult from "@/components/dashboard/DailyResult";
 import EmotionHistory from "@/components/dashboard/EmotionHistory";
@@ -15,40 +16,43 @@ import LoadingSpinner from "@/components/common/LoadingSpinner";
 function MainPage() {
   const { token, authFetch } = useAuth();
 
-  const [logs, setLogs] = useState<EmotionLog[]>([]);
-  const [todayData, setTodayData] = useState<EmotionLog | null>(null);
+  const { logs, setLogs, todayData, setTodayData, isFetched, setIsFetched } =
+    useEmotion();
+
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!token) return;
 
     const fetchEmotions = async () => {
+      // 2. ⭐️ 이미 데이터가 있으면(캐시됨) 서버 요청 스킵!
+      if (isFetched) {
+        console.log("🚀 EmotionContext 캐시 사용 (서버 요청 X)");
+        setIsLoading(false);
+        return;
+      }
+
+      console.log("🌐 서버에서 데이터를 불러옵니다...");
       try {
-        // 1. 날짜 계산 (오늘 ~ 3일 전 = 총 4일)
+        setIsLoading(true);
+
         const now = new Date();
         const offset = now.getTimezoneOffset() * 60000;
         const today = new Date(now.getTime() - offset);
 
         const todayStr = today.toISOString().split("T")[0];
-
         const threeDaysAgo = new Date(today);
         threeDaysAgo.setDate(today.getDate() - 3);
         const startDateStr = threeDaysAgo.toISOString().split("T")[0];
 
-        // 2. API 호출
         const response = await authFetch(
-          `${process.env.NEXT_PUBLIC_API_HOST}/emotions?start_date=${startDateStr}&end_date=${todayStr}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+          `${process.env.NEXT_PUBLIC_API_HOST}/emotions?start_date=${startDateStr}&end_date=${todayStr}`
         );
 
-        if (!response.ok) {
-          throw new Error("데이터를 불러오지 못했습니다.");
-        }
+        if (!response.ok) throw new Error("데이터 로드 실패");
 
         const json = await response.json();
-        const serverData: any[] = json.data || [];
+        const serverData = json.data || [];
         const last4Days: EmotionLog[] = [];
 
         for (let i = 3; i >= 0; i--) {
@@ -56,11 +60,9 @@ function MainPage() {
           d.setDate(today.getDate() - i);
           const dateStr = d.toISOString().split("T")[0];
 
-          // 해당 날짜 데이터 찾기
-          const found = serverData.find((item) => item.date === dateStr);
+          const found = serverData.find((item: any) => item.date === dateStr);
 
           if (found) {
-            // [데이터 있음] 변환해서 추가
             last4Days.push({
               id: found.id,
               date: found.date,
@@ -69,24 +71,24 @@ function MainPage() {
               imageUrl: found.imageData || found.imageUrl,
             });
           } else {
-            // [데이터 없음] ⭐️ '빈 날짜 객체' 추가 (id는 임시값, emotion은 'empty' 같은 값)
-            // EmotionHistory에서 emotion이 없거나 'empty'일 때 빈칸을 그리도록 처리해야 함
             last4Days.push({
               id: `empty_${dateStr}`,
               date: dateStr,
-              emotion: "empty", // ⭐️ 'empty'라는 가상의 감정 상태 추가
+              emotion: "empty",
               emotionLevel: 0,
             });
           }
         }
 
+        // 3. ⭐️ Context에 데이터 저장 및 플래그 설정
         setLogs(last4Days);
 
-        // 오늘 데이터 찾기
         const todayLog = last4Days.find(
           (log) => log.date === todayStr && log.emotion !== "empty"
         );
         setTodayData(todayLog || null);
+
+        setIsFetched(true); // ⭐️ "데이터 가져왔음" 표시
       } catch (error) {
         console.error(error);
       } finally {
@@ -95,7 +97,7 @@ function MainPage() {
     };
 
     fetchEmotions();
-  }, [token]);
+  }, [token, authFetch, isFetched, setLogs, setTodayData, setIsFetched]);
 
   if (isLoading) {
     return (
