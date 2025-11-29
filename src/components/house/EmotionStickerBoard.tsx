@@ -15,10 +15,16 @@ const MOCK_COLLECTED_EMOTIONS = [
   "중립",
 ];
 
-export default function EmotionStickerBoard() {
-  const [uniqueEmotions, setUniqueEmotions] = useState<string[]>([]);
+interface EmotionStickerBoardProps {
+  onSelectSticker?: (emotion: string) => void;
+  selectedEmotion?: string | null;
+}
 
-  // 1. 열림/닫힘 상태 관리
+export default function EmotionStickerBoard({
+  onSelectSticker,
+  selectedEmotion,
+}: EmotionStickerBoardProps) {
+  const [uniqueEmotions, setUniqueEmotions] = useState<string[]>([]);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
@@ -34,22 +40,18 @@ export default function EmotionStickerBoard() {
   const slots = Array.from({ length: totalSlots });
 
   return (
-    // 2. ⭐️ 위치 및 높이 제어 수정
-    // - bottom-16: 네비게이션 바 바로 위에 고정 (절대 침범하지 않음)
-    // - h-80 vs h-12: 열리면 320px, 닫히면 48px(핸들만 보임)
     <div
       className={`fixed bottom-16 left-0 right-0 z-30 
                   bg-app-bg-tertiary
                   rounded-t-[2.5rem] shadow-[0_-4px_20px_rgba(0,0,0,0.2)]
                   transition-all duration-300 ease-in-out overflow-hidden
-                  ${isOpen ? "h-80" : "h-12"}`}
+                  flex flex-col
+                  ${isOpen ? "h-96" : "h-12"}`}
     >
-      {/* 3. 토글 버튼 (핸들바) - 높이 h-12 (48px) 고정 */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full h-12 flex justify-center items-center cursor-pointer hover:bg-white/5 transition-colors outline-none"
+        className="w-full h-12 shrink-0 flex justify-center items-center cursor-pointer hover:bg-white/5 transition-colors outline-none"
       >
-        {/* 아이콘 애니메이션은 유지 */}
         {isOpen ? (
           <IoChevronDown className="text-white/80 text-2xl animate-bounce" />
         ) : (
@@ -57,26 +59,36 @@ export default function EmotionStickerBoard() {
         )}
       </button>
 
-      {/* 4. 내부 콘텐츠 (스크롤 영역) */}
-      {/* h-full에서 핸들바 높이(h-12)만큼 뺀 공간 사용 */}
-      <div className="h-[calc(100%-3rem)] px-8 pb-6 flex flex-col">
-        {/* 타이틀 */}
-        <div className="flex justify-between items-center mb-4 shrink-0">
+      <div className="flex-1 flex flex-col min-h-0 px-6 pb-6">
+        <div className="flex justify-between items-center mb-4 shrink-0 px-2">
           <h3 className="text-white/90 font-bold text-sm">나의 감정 컬렉션</h3>
           <span className="text-white/50 text-xs">
             {uniqueEmotions.length}개 수집
           </span>
         </div>
 
-        {/* 스티커 그리드 */}
-        <div className="w-full overflow-y-auto scrollbar-hide pb-10">
-          <div className="grid grid-cols-5 gap-3 justify-items-center">
+        <div className="flex-1 w-full overflow-y-auto scrollbar-hide pb-4">
+          <div className="grid grid-cols-5 gap-3 justify-items-center p-1">
+            {" "}
+            {/* ⭐️ p-1 추가하여 테두리 잘림 방지 */}
             {slots.map((_, index) => {
               const emotion = uniqueEmotions[index];
+              const isSelected = emotion === selectedEmotion;
+
               return (
                 <div
                   key={index}
-                  className="w-14 h-14 bg-[#FDFCF8] rounded-2xl flex items-center justify-center shadow-inner relative overflow-hidden shrink-0"
+                  onClick={() =>
+                    emotion && onSelectSticker && onSelectSticker(emotion)
+                  }
+                  className={`w-14 h-14 bg-[#FDFCF8] rounded-2xl flex items-center justify-center shadow-inner relative overflow-hidden shrink-0 
+                              transition-all duration-200
+                              ${emotion ? "cursor-pointer hover:scale-105" : ""}
+                              ${
+                                isSelected
+                                  ? "border-4 border-yellow-400 bg-yellow-50 scale-105 shadow-lg" // ⭐️ ring 대신 border 사용
+                                  : "hover:shadow-md border-2 border-transparent"
+                              }`}
                 >
                   {emotion ? (
                     <Image
@@ -84,10 +96,18 @@ export default function EmotionStickerBoard() {
                       alt={emotion}
                       width={40}
                       height={40}
-                      className="object-contain drop-shadow-sm hover:scale-110 transition-transform cursor-pointer"
+                      className={`object-contain drop-shadow-sm transition-transform
+                                  ${
+                                    isSelected ? "scale-110" : "active:scale-90"
+                                  }`}
                     />
                   ) : (
                     <div className="w-full h-full opacity-50" />
+                  )}
+
+                  {/* 선택 시 오버레이 (선택사항) */}
+                  {isSelected && (
+                    <div className="absolute inset-0 bg-yellow-400/10 pointer-events-none" />
                   )}
                 </div>
               );
