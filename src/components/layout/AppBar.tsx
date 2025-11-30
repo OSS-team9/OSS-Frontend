@@ -20,7 +20,7 @@ export default function AppBar({ onProfileClick }: AppBarProps) {
   const isMainPage = pathname === "/main";
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-10 h-16 bg-app-bg-tertiary">
+    <header className="fixed top-0 left-0 right-0 z-100 h-16 bg-app-bg-tertiary">
       <div className="flex items-center justify-between h-full max-w-md px-6 mx-auto">
         {/* 1. 앱 이름 (왼쪽) */}
         <h1 className="text-base font-bold text-app-bg font-lotte">

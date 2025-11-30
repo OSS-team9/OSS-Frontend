@@ -19,7 +19,7 @@ export default function withAuth(Component: React.ComponentType<any>) {
     }, [token, router, isInitialized]);
     if (!isInitialized) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-[--color-app-bg]">
+        <div className="min-h-screen flex items-center justify-center bg-app-bg">
           <LoadingSpinner />
         </div>
       );
