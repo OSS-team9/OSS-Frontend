@@ -30,12 +30,6 @@ export default function AppBar({ onProfileClick }: AppBarProps) {
           {isHousePage && (
             <>
               <button
-                className="p-2 rounded-full transition"
-                onClick={() => console.log("공유 클릭")}
-              >
-                <IoShareSocialOutline size={24} className="text-app-bg" />
-              </button>
-              <button
                 className="p-2 -mr-2 rounded-full transition"
                 onClick={() => console.log("아카이브 클릭")}
               >
