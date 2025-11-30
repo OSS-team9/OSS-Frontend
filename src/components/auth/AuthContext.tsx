@@ -16,6 +16,7 @@ interface AuthContextType {
   login: (newToken: string) => void;
   logout: () => void;
   authFetch: (url: string, options?: RequestInit) => Promise<Response>;
+  isInitialized: boolean; // ⭐️ 추가: 초기화 완료 여부
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,6 +25,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   // 'token' state로 서버 전용 토큰을 관리
   const [token, setToken] = useState<string | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
   const router = useRouter();
   const isLoggingOutRef = useRef(false);
 
@@ -34,6 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (storedToken) {
       setToken(storedToken);
     }
+    setIsInitialized(true); // ⭐️ 로컬스토리지 확인 끝!
   }, []); // [] : 맨 처음 1회만 실행
 
   // 로그인 함수: state와 localStorage에 토큰 저장
@@ -80,7 +83,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
   // '창고'의 실제 값(토큰, 로그인/로그아웃 함수)을 자식들에게 제공
   return (
-    <AuthContext.Provider value={{ token, login, logout, authFetch }}>
+    <AuthContext.Provider
+      value={{ token, login, logout, authFetch, isInitialized }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -94,7 +99,8 @@ export function useAuth() {
       token: null,
       login: () => {},
       logout: () => {},
-      authFetch: async () => new Response(), // 더미 함수
+      authFetch: async () => new Response(),
+      isInitialized: false,
     };
   }
   return context;
