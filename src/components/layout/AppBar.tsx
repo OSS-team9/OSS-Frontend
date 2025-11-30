@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   IoPersonOutline,
   IoShareSocialOutline,
@@ -13,6 +13,7 @@ interface AppBarProps {
 
 export default function AppBar({ onProfileClick }: AppBarProps) {
   const pathname = usePathname();
+  const router = useRouter();
 
   // 1. 현재 페이지 상태 확인
   const isHousePage = pathname === "/house";
@@ -31,7 +32,7 @@ export default function AppBar({ onProfileClick }: AppBarProps) {
             <>
               <button
                 className="p-2 -mr-2 rounded-full transition"
-                onClick={() => console.log("아카이브 클릭")}
+                onClick={() => router.push("/house/collection")}
               >
                 <IoBookOutline size={24} className="text-app-bg" />
               </button>
