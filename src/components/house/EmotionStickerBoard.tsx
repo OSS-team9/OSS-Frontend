@@ -4,7 +4,9 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { IoChevronUp, IoChevronDown } from "react-icons/io5";
 import { toEnglishEmotion } from "@/utils/emotionUtils";
+import { useEmotion } from "@/components/auth/EmotionContext";
 
+// Mock 데이터 (실제 서버 연동 시 교체 필요)
 const MOCK_COLLECTED_EMOTIONS = [
   "기쁨",
   "슬픔",
@@ -24,19 +26,26 @@ export default function EmotionStickerBoard({
   onSelectSticker,
   selectedEmotion,
 }: EmotionStickerBoardProps) {
-  const [uniqueEmotions, setUniqueEmotions] = useState<string[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  const { collectedEmotions, setCollectedEmotions } = useEmotion();
 
   useEffect(() => {
+    // ⭐️ 이미 캐시된 데이터가 있으면 서버 요청 안 함!
+    if (collectedEmotions) return;
+
+    // (데이터가 없으면 여기서 서버 요청 or Mock 데이터 로드)
     const uniqueSet = new Set(MOCK_COLLECTED_EMOTIONS);
     const uniqueArray = Array.from(uniqueSet);
     const englishEmotions = uniqueArray.map((koreanName) =>
       toEnglishEmotion(koreanName)
     );
-    setUniqueEmotions(englishEmotions);
-  }, []);
 
-  const totalSlots = Math.ceil(Math.max(uniqueEmotions.length, 15) / 5) * 5;
+    // ⭐️ Context에 저장 (이제 앱 끄기 전까지 유지됨)
+    setCollectedEmotions(englishEmotions);
+  }, [collectedEmotions, setCollectedEmotions]);
+
+  const emotions = collectedEmotions || [];
+  const totalSlots = Math.ceil(Math.max(emotions.length, 15) / 5) * 5;
   const slots = Array.from({ length: totalSlots });
 
   return (
@@ -63,7 +72,7 @@ export default function EmotionStickerBoard({
         <div className="flex justify-between items-center mb-4 shrink-0 px-2">
           <h3 className="text-white/90 font-bold text-sm">나의 감정 컬렉션</h3>
           <span className="text-white/50 text-xs">
-            {uniqueEmotions.length}개 수집
+            {emotions.length}개 수집
           </span>
         </div>
 
@@ -72,7 +81,7 @@ export default function EmotionStickerBoard({
             {" "}
             {/* ⭐️ p-1 추가하여 테두리 잘림 방지 */}
             {slots.map((_, index) => {
-              const emotion = uniqueEmotions[index];
+              const emotion = emotions[index];
               const isSelected = emotion === selectedEmotion;
 
               return (
