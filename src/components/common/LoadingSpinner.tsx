@@ -5,7 +5,8 @@ import loadingAnimation from "@/lottie/loading.json";
 
 export default function LoadingSpinner() {
   return (
-    <div className="flex flex-col items-center justify-center h-64 w-full">
+    // 1. ⭐️ h-64 제거 -> h-full로 변경 (부모 크기에 맞춤)
+    <div className="flex flex-col items-center justify-center w-full h-full min-h-[150px]">
       <div className="relative w-32 h-32 flex items-center justify-center">
         <Lottie
           animationData={loadingAnimation}

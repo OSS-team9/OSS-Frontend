@@ -8,6 +8,7 @@ import {
 } from "@mediapipe/tasks-vision";
 import Card from "@/components/common/BorderCard";
 import { useShareAndDownload } from "@/hooks/useShareAndDownload";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
 
 interface FaceMeshProcessorProps {
   imageSrc: string;
@@ -303,10 +304,10 @@ export default function FaceMeshProcessor({
   return (
     <div className="w-full h-full">
       <div className="w-full p-4 bg-app-bg-secondary">
-        <Card className="mobile-container bg-gray-200">
+        <Card className="mobile-container bg-gray-200 relative">
           {!faceLandmarker && (
-            <div className="text-center p-4">
-              <p>AI 모델을 로드 중입니다...</p>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ">
+              <LoadingSpinner />
             </div>
           )}
 
