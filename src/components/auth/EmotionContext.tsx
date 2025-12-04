@@ -32,6 +32,8 @@ interface EmotionContextType {
   isHouseFetched: boolean; // 서버에서 불러왔는지 여부
   setIsHouseFetched: (fetched: boolean) => void;
   invalidateHouseCache: () => void; // 저장 후 갱신용
+  isEmotionsFetched: boolean;
+  setIsEmotionsFetched: (fetched: boolean) => void;
 }
 
 const EmotionContext = createContext<EmotionContextType | undefined>(undefined);
@@ -49,6 +51,7 @@ export function EmotionProvider({ children }: { children: ReactNode }) {
 
   const [houseEmotion, setHouseEmotion] = useState<string | null>(null);
   const [isHouseFetched, setIsHouseFetched] = useState(false);
+  const [isEmotionsFetched, setIsEmotionsFetched] = useState(false);
 
   const invalidateCache = () => {
     setIsFetched(false);
@@ -61,6 +64,7 @@ export function EmotionProvider({ children }: { children: ReactNode }) {
   const invalidateHouseCache = () => {
     setIsHouseFetched(false);
     setHouseEmotion(null);
+    setIsEmotionsFetched(false);
   };
 
   return (
@@ -85,6 +89,8 @@ export function EmotionProvider({ children }: { children: ReactNode }) {
         isHouseFetched,
         setIsHouseFetched,
         invalidateHouseCache,
+        isEmotionsFetched,
+        setIsEmotionsFetched,
       }}
     >
       {children}

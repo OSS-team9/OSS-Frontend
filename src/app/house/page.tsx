@@ -12,6 +12,19 @@ import EmotionStickerBoard from "@/components/house/EmotionStickerBoard";
 import { useEmotion } from "@/components/auth/EmotionContext";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { useShareAndDownload } from "@/hooks/useShareAndDownload";
+import { toEnglishEmotion } from "@/utils/emotionUtils";
+
+const ROOM_BASE_IMAGE = "/images/room/room_base.png";
+const ROOM_DECORATIONS: Record<string, string> = {
+  joy: "/images/room/room_joy.png", // 별
+  sadness: "/images/room/room_sadness.png", // 눈
+  anger: "/images/room/room_anger.png", // 양초
+  panic: "/images/room/room_panic.png", // 볼장식
+  anxiety: "/images/room/room_anxiety.png",
+  hurt: "/images/room/room_hurt.png",
+  neutral: "/images/room/room_neutral.png",
+};
+const MOCK_COLLECTED_EMOTIONS = ["기쁨", "분노"];
 
 function HousePage() {
   const router = useRouter();
@@ -24,6 +37,10 @@ function HousePage() {
     isHouseFetched,
     setIsHouseFetched,
     invalidateEmotionsCache, // 저장 시 컬렉션 갱신용
+    collectedEmotions,
+    setCollectedEmotions,
+    isEmotionsFetched,
+    setIsEmotionsFetched,
   } = useEmotion();
   const { shareImage, canvasToBlob } = useShareAndDownload();
 
@@ -34,34 +51,42 @@ function HousePage() {
   // ⭐️ 캔버스 참조 생성 (합성용)
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // 1. ⭐️ 데이터 로드 (캐시 우선)
+  // 1. 데이터 로드 (캐싱 적용)
   useEffect(() => {
-    // 캐시가 있으면 바로 적용하고 종료
-    if (isHouseFetched) {
-      console.log("🚀 무드 라운지: 캐시 데이터 사용");
-      setPlacedEmotion(houseEmotion);
-      setIsLoading(false);
-      return;
-    }
-
-    // 캐시 없으면 서버 요청
-    const fetchHouseData = async () => {
+    const loadData = async () => {
       if (!token) return;
 
+      // (A) 수집된 감정 목록 로드
+      // 캐시가 없으면 로드하고 Context에 저장
+      if (!isEmotionsFetched) {
+        // TODO: 실제로는 fetch('/api/emotions/collected')
+        const uniqueSet = new Set(MOCK_COLLECTED_EMOTIONS);
+        const uniqueArray = Array.from(uniqueSet);
+        const englishEmotions = uniqueArray.map((k) => toEnglishEmotion(k));
+
+        setCollectedEmotions(englishEmotions);
+        setIsEmotionsFetched(true);
+      }
+
+      // (B) ⭐️ 무드 라운지 상태 로드
+      if (isHouseFetched) {
+        console.log("🚀 무드 라운지: 캐시 데이터 사용");
+        setPlacedEmotion(houseEmotion); // 캐시된 데이터 적용
+        setIsLoading(false); // 로딩 즉시 종료
+        return;
+      }
+
+      // 캐시가 없으면 서버 요청
       console.log("🌐 무드 라운지: 서버 데이터 요청");
       try {
-        // (가짜 API 호출 - 나중에 실제 엔드포인트로 교체)
-        // const res = await authFetch('/api/house');
-        // const data = await res.json();
-
-        // Mock 데이터 (예: 서버에 저장된게 'joy'라고 가정)
+        // (Mock API 호출 - 0.8초 딜레이)
         await new Promise((resolve) => setTimeout(resolve, 800));
-        const mockServerData = null; // 처음엔 없음 (또는 "joy")
+        const mockServerData = null; // 처음엔 없음 (또는 "joy" 등)
 
         // ⭐️ 받아온 데이터를 Context와 로컬 state에 저장
         setHouseEmotion(mockServerData);
         setPlacedEmotion(mockServerData);
-        setIsHouseFetched(true); // "불러왔음" 표시
+        setIsHouseFetched(true); // "불러왔음" 표시 (다음엔 캐시 사용)
       } catch (error) {
         console.error("불러오기 실패:", error);
       } finally {
@@ -69,16 +94,22 @@ function HousePage() {
       }
     };
 
-    fetchHouseData();
-  }, [token, isHouseFetched, houseEmotion, setHouseEmotion, setIsHouseFetched]);
+    loadData();
+  }, [
+    token,
+    isHouseFetched,
+    isEmotionsFetched,
+    houseEmotion,
+    setHouseEmotion,
+    setIsHouseFetched,
+    setCollectedEmotions,
+    setIsEmotionsFetched,
+  ]);
 
   // 2. 스티커 선택 핸들러
   const handleSelectSticker = (emotion: string) => {
-    if (placedEmotion === emotion) {
-      setPlacedEmotion(null);
-    } else {
-      setPlacedEmotion(emotion);
-    }
+    // 토글 로직: 이미 선택된 거면 해제
+    setPlacedEmotion(placedEmotion === emotion ? null : emotion);
   };
 
   // 3. 저장 핸들러 (저장 후 캐시도 업데이트)
@@ -100,7 +131,7 @@ function HousePage() {
       // (이미 isHouseFetched=true 이므로, 다시 들어와도 이 값을 씀)
 
       // (선택) 다른 화면(메인 등)의 캐시 갱신이 필요하면 호출
-      invalidateEmotionsCache();
+      // invalidateEmotionsCache();
 
       alert("무드 라운지가 저장되었습니다! 🏠✨");
     } catch (error) {
@@ -122,17 +153,40 @@ function HousePage() {
     try {
       setIsSaving(true); // 공유 중 로딩 표시
 
-      // 1) 배경 이미지 로드
-      const bgImage = new window.Image();
-      bgImage.src = "/images/mood_room.png";
-      await new Promise((resolve) => (bgImage.onload = resolve));
+      // (1) 기본 배경 로드
+      const baseImage = new window.Image();
+      baseImage.src = ROOM_BASE_IMAGE;
+      baseImage.crossOrigin = "anonymous";
+      await new Promise((resolve, reject) => {
+        baseImage.onload = resolve;
+        baseImage.onerror = reject;
+      });
 
-      // 캔버스 크기를 배경 이미지 크기에 맞춤
-      canvas.width = bgImage.width;
-      canvas.height = bgImage.height;
+      canvas.width = baseImage.width;
+      canvas.height = baseImage.height;
+      ctx.drawImage(baseImage, 0, 0);
 
-      // 2) 배경 그리기
-      ctx.drawImage(bgImage, 0, 0);
+      // (2) 수집된 감정 장식들 덧그리기
+      if (collectedEmotions) {
+        for (const emotion of collectedEmotions) {
+          const decorationSrc = ROOM_DECORATIONS[emotion];
+          if (decorationSrc) {
+            const decoImage = new window.Image();
+            decoImage.src = decorationSrc;
+            decoImage.crossOrigin = "anonymous";
+
+            try {
+              await new Promise((resolve, reject) => {
+                decoImage.onload = resolve;
+                decoImage.onerror = reject;
+              });
+              ctx.drawImage(decoImage, 0, 0, canvas.width, canvas.height);
+            } catch (e) {
+              console.warn(`장식 로드 실패 (${emotion})`, e);
+            }
+          }
+        }
+      }
 
       // 3) 스티커가 있다면 그리기
       if (placedEmotion) {
@@ -213,12 +267,32 @@ function HousePage() {
             </div>
           )}
           <Image
-            src="/images/mood_room.png"
-            alt="Mood Lounge"
+            src={ROOM_BASE_IMAGE}
+            alt="Room Base"
             fill
             className="object-cover"
             priority
           />
+
+          {/* 2. 수집된 감정 장식들 (레이어드) */}
+          {collectedEmotions?.map((emotion) => {
+            const decorationSrc = ROOM_DECORATIONS[emotion];
+            if (!decorationSrc) return null;
+
+            return (
+              <div
+                key={emotion}
+                className="absolute inset-0 z-1 pointer-events-none"
+              >
+                <Image
+                  src={decorationSrc}
+                  alt={`${emotion} decoration`}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+            );
+          })}
 
           {/* 2. ⭐️ 배치된 스티커 (X 버튼 제거됨) */}
           {placedEmotion && (
