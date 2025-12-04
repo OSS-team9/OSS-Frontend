@@ -195,7 +195,7 @@ export default function FaceMeshProcessor({
 
       // [3단계] ⭐️ AI 결과에 맞는 '하나의' 아이콘 로드
       const iconToDraw = new Image();
-      iconToDraw.src = `/emotions/${aiResult.emotion}_${aiResult.level}.png`;
+      iconToDraw.src = `/images/emotions/${aiResult.emotion}_${aiResult.level}.png`;
 
       // [4단계] ⭐️ 아이콘 로드 완료 대기
       await new Promise((resolve) => (iconToDraw.onload = resolve));

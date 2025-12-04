@@ -17,7 +17,7 @@ export default function DailyResult({ data }: DailyResultProps) {
   const displayDate = data?.date || getFormattedDate();
 
   const characterImage = data
-    ? `/emotions/${data.emotion}_${data.emotionLevel}.png`
+    ? `/images/emotions/${data.emotion}_${data.emotionLevel}.png`
     : "/images/question.png";
 
   const handleShareClick = async () => {

@@ -101,7 +101,7 @@ export default function EmotionStickerBoard({
                 >
                   {emotion ? (
                     <Image
-                      src={`/emotions/${emotion}_3.png`}
+                      src={`/images/emotions/${emotion}_3.png`}
                       alt={emotion}
                       width={40}
                       height={40}

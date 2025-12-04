@@ -69,7 +69,7 @@ export default function EmotionHistory({ logs }: EmotionHistoryProps) {
                 ) : (
                   // 데이터 아이콘 (이미지)
                   <Image
-                    src={`/emotions/${item.emotion}.png`}
+                    src={`/images/emotions/${item.emotion}.png`}
                     alt={item.emotion}
                     fill
                     className="object-contain"

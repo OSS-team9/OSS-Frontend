@@ -137,7 +137,7 @@ function HousePage() {
       // 3) 스티커가 있다면 그리기
       if (placedEmotion) {
         const stickerImage = new window.Image();
-        stickerImage.src = `/emotions/${placedEmotion}_3.png`; // 3단계(큰) 이미지
+        stickerImage.src = `/images/emotions/${placedEmotion}_3.png`; // 3단계(큰) 이미지
         await new Promise((resolve) => (stickerImage.onload = resolve));
 
         // 스티커 위치 및 크기 계산 (화면상의 비율을 캔버스 좌표로 변환)
@@ -224,7 +224,7 @@ function HousePage() {
           {placedEmotion && (
             <div className="absolute bottom-[0%] left-1/2 -translate-x-1/2 w-80 h-80 animate-bounce-slow">
               <Image
-                src={`/emotions/${placedEmotion}_3.png`}
+                src={`/images/emotions/${placedEmotion}_3.png`}
                 alt="Placed Sticker"
                 fill
                 className="object-contain drop-shadow-xl filter brightness-110"

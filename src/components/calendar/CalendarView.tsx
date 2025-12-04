@@ -154,7 +154,7 @@ export default function CalendarView({
                   // (파일명 규칙: joy.png, sadness.png 등 - 레벨 없이 기본형 사용 가정)
                   // (만약 레벨별 아이콘을 쓴다면 _${log.emotionLevel} 추가)
                   <Image
-                    src={`/emotions/${log.emotion}.png`}
+                    src={`/images/emotions/${log.emotion}.png`}
                     alt={log.emotion}
                     fill
                     className="object-contain drop-shadow-sm"

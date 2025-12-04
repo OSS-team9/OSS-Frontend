@@ -157,7 +157,7 @@ function CalendarDetailPage() {
                   )} flex items-center justify-center mb-2 relative overflow-hidden`}
                 >
                   <Image
-                    src={`/emotions/${log.emotion}_${log.emotionLevel}.png`}
+                    src={`/images/emotions/${log.emotion}_${log.emotionLevel}.png`}
                     alt={log.emotion}
                     width={60}
                     height={60}

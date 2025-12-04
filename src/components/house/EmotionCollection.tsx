@@ -92,7 +92,7 @@ export default function EmotionCollection() {
             >
               <Image
                 // 대표 아이콘은 1레벨 이미지를 쓰거나 별도 아이콘 사용
-                src={`/emotions/${category.emotion}.png`}
+                src={`/images/emotions/${category.emotion}.png`}
                 alt={category.label}
                 width={32}
                 height={32}
@@ -116,7 +116,7 @@ export default function EmotionCollection() {
                   {item.acquired ? (
                     // ✅ 획득함: 캐릭터 이미지
                     <Image
-                      src={`/emotions/${category.emotion}_${item.level}.png`}
+                      src={`/images/emotions/${category.emotion}_${item.level}.png`}
                       alt={item.name}
                       width={50}
                       height={50}
