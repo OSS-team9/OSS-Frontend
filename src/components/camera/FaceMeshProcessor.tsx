@@ -183,6 +183,8 @@ export default function FaceMeshProcessor({
   const [detectionFailed, setDetectionFailed] = useState(false);
   const [isDrawingComplete, setIsDrawingComplete] = useState(false);
 
+  const isRunningRef = useRef(false);
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // 공유 훅 사용
@@ -298,48 +300,53 @@ export default function FaceMeshProcessor({
 
       const lm = result.faceLandmarks[0];
 
-      // (3)  ONNX 모델 추론 실행
-      // 팀원 코드의 전처리 로직 사용
-      const bbox = computeBBox(lm);
-      const vec = landmarksToVec1434_CropNorm(lm, bbox);
+      if (isRunningRef.current) return;
 
-      // 실제 AI 추론! (Mock 아님)
-      const aiResult = await runEmotion(emotionSession, vec, scaler);
-      console.log("AI 추론 결과:", aiResult);
+      try {
+        isRunningRef.current = true;
 
-      // (4) 아이콘 그리기 로직 (User Logic 복구)
-      const iconToDraw = new Image();
-      // 님의 파일명 규칙(emotion_level.png)에 맞춤
-      iconToDraw.src = `/images/emotions/${aiResult.emotion}_${aiResult.level}.png`;
+        // (3) ONNX 모델 추론 실행
+        const bbox = computeBBox(lm);
+        const vec = landmarksToVec1434_CropNorm(lm, bbox);
 
-      await new Promise((resolve) => (iconToDraw.onload = resolve));
+        // 실제 AI 추론 (여기서 시간 걸림)
+        const aiResult = await runEmotion(emotionSession, vec, scaler);
+        console.log("AI 추론 결과:", aiResult);
 
-      // 랜드마크 좌표 변환
-      const scaledLandmarks = lm.map((landmark) => {
-        const originalX = landmark.x * userImage.naturalWidth;
-        const originalY = landmark.y * userImage.naturalHeight;
-        const canvasX = ((originalX - sx) / sWidth) * canvas.width;
-        const canvasY = ((originalY - sy) / sHeight) * canvas.height;
-        return {
-          x: canvasX / canvas.width,
-          y: canvasY / canvas.height,
-          z: landmark.z,
-        };
-      });
+        // (4) 아이콘 그리기
+        const iconToDraw = new Image();
+        iconToDraw.src = `/images/emotions/${aiResult.emotion}_${aiResult.level}.png`;
+        await new Promise((resolve) => (iconToDraw.onload = resolve));
 
-      // 스티커 부착
-      ICON_PLACEMENTS.forEach((placement) => {
-        const landmark = scaledLandmarks[placement.landmarkIndex];
-        const x = landmark.x * canvas.width + placement.offsetX;
-        const y = landmark.y * canvas.height + placement.offsetY;
-        ctx.drawImage(iconToDraw, x, y, placement.width, placement.height);
-      });
+        const scaledLandmarks = lm.map((landmark) => {
+          const originalX = landmark.x * userImage.naturalWidth;
+          const originalY = landmark.y * userImage.naturalHeight;
+          const canvasX = ((originalX - sx) / sWidth) * canvas.width;
+          const canvasY = ((originalY - sy) / sHeight) * canvas.height;
+          return {
+            x: canvasX / canvas.width,
+            y: canvasY / canvas.height,
+            z: landmark.z,
+          };
+        });
 
-      setIsDrawingComplete(true);
-      const finalImage = canvas.toDataURL("image/png");
+        ICON_PLACEMENTS.forEach((placement) => {
+          const landmark = scaledLandmarks[placement.landmarkIndex];
+          const x = landmark.x * canvas.width + placement.offsetX;
+          const y = landmark.y * canvas.height + placement.offsetY;
+          ctx.drawImage(iconToDraw, x, y, placement.width, placement.height);
+        });
 
-      if (onAnalysisComplete) {
-        onAnalysisComplete(aiResult.emotion, aiResult.level, finalImage);
+        setIsDrawingComplete(true);
+        const finalImage = canvas.toDataURL("image/png");
+
+        if (onAnalysisComplete) {
+          onAnalysisComplete(aiResult.emotion, aiResult.level, finalImage);
+        }
+      } catch (error) {
+        console.error("AI 처리 중 오류 발생:", error);
+      } finally {
+        isRunningRef.current = false;
       }
     };
   }, [faceLandmarker, emotionSession, scaler, imageSrc]); // 의존성 배열 업데이트
