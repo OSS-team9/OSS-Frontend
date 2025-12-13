@@ -267,8 +267,8 @@ function HousePage() {
             disabled={isSaving}
             className={`p-2 rounded-full transition ${
               placedEmotion
-                ? "text-blue-600 bg-blue-50 hover:bg-blue-100"
-                : "text-gray-400"
+                ? "text-app-bg-secondary bg-[#F5EFE6] hover:bg-amber-200" // 따뜻한 갈색/노란색 조합
+                : "text-gray-300 bg-gray-50" // 비활성화 상태도 조금 더 부드럽게
             }`}
             title="저장하기"
           >
