@@ -4,7 +4,7 @@
   "description": "Daily의 Emotion을 Face으로 record하다",
   "start_url": "/main",
   "display": "standalone",
-  "background_color": "#56412c",
+  "background_color": "#eadcc7",
   "theme_color": "#56412c",
   "icons": [
     {
