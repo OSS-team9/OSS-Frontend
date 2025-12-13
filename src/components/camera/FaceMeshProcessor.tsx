@@ -10,25 +10,44 @@ import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { useShareAndDownload } from "@/hooks/useShareAndDownload";
 import * as ort from "onnxruntime-web";
 
-// -----------------------------------------
-// 감정 라벨
-// -----------------------------------------
-const EMOTIONS = ["sadness", "joy", "anger", "anxiety", "panic", "hurt", "neutral"];
-
-// --- Hide Mediapipe / TF Lite INFO logs ---
+// ==================================================
+// 로그 정리: Mediapipe / TFLite 메시지 숨김
+// ==================================================
 if (typeof console !== "undefined") {
   const origInfo = console.info;
   console.info = function (...args) {
-    // 필터링: 특정 문자열을 무시
-    if (String(args[0]).includes("XNNPACK delegate")) return;
-    if (String(args[0]).includes("TensorFlow Lite")) return;
-    origInfo.apply(console, args);
+    const msg = String(args[0] ?? "");
+    if (msg.includes("TensorFlow Lite")) return;
+    if (msg.includes("XNNPACK delegate")) return;
+    return origInfo.apply(console, args);
   };
 }
 
-// -----------------------------------------
-// Softmax
-// -----------------------------------------
+// ==================================================
+// 감정 라벨
+// ==================================================
+// const EMOTIONS = [
+//   "sadness",
+//   "joy",
+//   "anger",
+//   "anxiety",
+//   "panic",
+//   "hurt",
+//   "neutral",
+// ];
+const EMOTIONS = [
+  "우울우울",
+  "햅삐햅삐",
+  "빡침폭발",
+  "안절부절",
+  "개무서움",
+  "마상입음",
+  "무념무상",
+];
+
+// ==================================================
+// softmax
+// ==================================================
 function softmax(arr: number[]) {
   const m = Math.max(...arr);
   const exps = arr.map((v) => Math.exp(v - m));
@@ -36,68 +55,69 @@ function softmax(arr: number[]) {
   return exps.map((v) => v / sum);
 }
 
-function flattenLandmarks(
-  lm: Array<{ x: number; y: number; z: number }>,
-  mode: number = 0,
-  W: number = 1,
-  H: number = 1){
+// ==================================================
+// 랜드마크 1434 flatten (x,y,z * 478)
+// ==================================================
+function landmarksToVec1434(lm: any[]): Float32Array {
   const out = new Float32Array(1434);
-
   for (let i = 0; i < 478; i++) {
-    let x = lm[i].x;
-    let y = lm[i].y;
-    let z = lm[i].z;
-
-    if (mode === 1) {
-      // x,y 절대값 기반
-      x = x * W;
-      y = y * H;
-    }
-
-    if (mode === 2) {
-      // x,y 중앙 정규화
-      x = x - 0.5;
-      y = y - 0.5;
-    }
-
-    if (mode === 3) {
-      // train reshape와 반대되는 순서 테스트
-      out[i * 3 + 0] = z;
-      out[i * 3 + 1] = y;
-      out[i * 3 + 2] = x;
-      continue;
-    }
-
-    out[i * 3 + 0] = x;
-    out[i * 3 + 1] = y;
-    out[i * 3 + 2] = z;
+    out[i * 3 + 0] = lm[i].x;
+    out[i * 3 + 1] = lm[i].y;
+    out[i * 3 + 2] = lm[i].z;
   }
-
   return out;
 }
 
+// ==================================================
+// 얼굴 Bounding Box 계산 (전체 이미지 기준)
+// ==================================================
+function computeBBox(lm: any[]) {
+  let minX = 1, minY = 1, maxX = 0, maxY = 0;
 
-// -----------------------------------------
-// (패치1) landmarks → Float32Array(1434)
-// -----------------------------------------
-function landmarksTo1434Vector(lm: any[]): Float32Array {
-  const v = new Float32Array(478 * 3);
-  for (let i = 0; i < 478; i++) {
-    v[i * 3 + 0] = lm[i].x;
-    v[i * 3 + 1] = lm[i].y;
-    v[i * 3 + 2] = lm[i].z;
+  for (const p of lm) {
+    minX = Math.min(minX, p.x);
+    minY = Math.min(minY, p.y);
+    maxX = Math.max(maxX, p.x);
+    maxY = Math.max(maxY, p.y);
   }
-  return v;
+
+  const w = maxX - minX;
+  const h = maxY - minY;
+
+  const pad = 0.1; // 여유
+  return {
+    x: Math.max(0, minX - w * pad),
+    y: Math.max(0, minY - h * pad),
+    w: Math.min(1, w * (1 + pad * 2)),
+    h: Math.min(1, h * (1 + pad * 2)),
+  };
 }
 
-// -----------------------------------------
-// (패치2) Float32 기반 normalize
-// -----------------------------------------
-function normalizeVec(
-  vec: Float32Array,
-  mean: number[],
-  scale: number[]
+// ==================================================
+// crop 기준 landmark → 1434 벡터
+// ==================================================
+function landmarksToVec1434_CropNorm(
+  lm: any[],
+  bbox: { x: number; y: number; w: number; h: number }
 ): Float32Array {
+  const out = new Float32Array(1434);
+
+  for (let i = 0; i < 478; i++) {
+    const nx = (lm[i].x - bbox.x) / bbox.w;
+    const ny = (lm[i].y - bbox.y) / bbox.h;
+    const nz = lm[i].z / bbox.w;
+
+    out[i * 3 + 0] = nx;
+    out[i * 3 + 1] = ny;
+    out[i * 3 + 2] = nz;
+  }
+  return out;
+}
+
+// ==================================================
+// normalize
+// ==================================================
+function normalize(vec: Float32Array, mean: number[], scale: number[]) {
   const out = new Float32Array(1434);
   for (let i = 0; i < 1434; i++) {
     out[i] = (vec[i] - mean[i]) / scale[i];
@@ -105,27 +125,27 @@ function normalizeVec(
   return out;
 }
 
-// -----------------------------------------
-// (패치3) ONNX 감정 추론 - input 이름은 반드시 ""
-// -----------------------------------------
-async function runEmotionPatched(
+// ==================================================
+// ONNX 감정 추론 (최종 안정 버전)
+// ==================================================
+async function runEmotion(
   session: ort.InferenceSession,
   vec1434: Float32Array,
   scaler: { mean: number[]; scale: number[] }
 ) {
-  // 1) 정규화
-  const norm = normalizeVec(vec1434, scaler.mean, scaler.scale);
+  // normalize
+  const norm = normalize(vec1434, scaler.mean, scaler.scale);
 
-  // 2) Float32Tensor 생성
+  // tensor
   const inputTensor = new ort.Tensor("float32", norm, [1, 1434]);
 
-  // 3) 핵심: ONNX input name 은 실제로 ""
-  const outputMap = await session.run({ "": inputTensor });
+  // 정확한 input/output 이름
+  const inputName = session.inputNames[0];            // "input"
+  const outputName = session.outputNames[0];          // "keras_tensor_44"
 
-  const outputName = Object.keys(outputMap)[0];
-  const raw = Array.from(outputMap[outputName].data as Float32Array);
+  const output = await session.run({ [inputName]: inputTensor });
+  const raw = Array.from(output[outputName].data as Float32Array);
 
-  // 4) softmax
   const probs = softmax(raw);
   const idx = probs.indexOf(Math.max(...probs));
 
@@ -135,26 +155,115 @@ async function runEmotionPatched(
   };
 }
 
-// ===================================================================
-// MAIN COMPONENT
-// ===================================================================
-interface FaceMeshProcessorProps {
-  imageSrc: string;
-  onRetake: () => void;
-  onAnalysisComplete?: (emotion: string, level: number, processedImage: string) => void;
-  onSaveRequest?: () => void;
-  isLoggedIn: boolean;
-  isSaving?: boolean;
+function drawEmotionLabel(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number
+) {
+  ctx.save();
+
+  ctx.font = "bold 32px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  const paddingX = 16;
+  const paddingY = 10;
+
+  const metrics = ctx.measureText(text);
+  const textWidth = metrics.width;
+  const textHeight = 32;
+
+  ctx.fillStyle = "rgba(0, 0, 0, 0.55)";
+  ctx.fillRect(
+    x - textWidth / 2 - paddingX,
+    y - textHeight / 2 - paddingY,
+    textWidth + paddingX * 2,
+    textHeight + paddingY * 2
+  );
+
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText(text, x, y);
+
+  ctx.restore();
 }
 
-export default function FaceMeshProcessor({
-  imageSrc,
-  onRetake,
-  onAnalysisComplete,
-  onSaveRequest,
-  isLoggedIn,
-  isSaving = false,
+function drawEmotionLabelAboveBBox(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  bbox: { x: number; y: number; w: number; h: number },
+  canvasW: number,
+  canvasH: number
+) {
+  ctx.save();
+
+  // bbox → pixel 좌표
+  const bx = bbox.x * canvasW;
+  const by = bbox.y * canvasH;
+  const bw = bbox.w * canvasW;
+
+  // bbox 크기에 연동된 폰트 크기
+  // const fontSize = Math.max(16, Math.floor(bw * 0.08));
+  const fontSize = Math.max(16, Math.floor(bw * 0.15));
+  const paddingX = fontSize * 0.6;
+  const paddingY = fontSize * 0.4;
+  const margin = fontSize * 0.5;
+
+  ctx.font = `bold ${fontSize}px sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  const metrics = ctx.measureText(text);
+  const textW = metrics.width;
+  const textH = fontSize;
+
+  // 텍스트 위치 (bbox 바로 위)
+  const x = bx + bw / 2;
+  let y = (by - margin - textH / 2) - 30;
+
+  // 화면 밖으로 나가지 않도록 클램프
+  if (y < textH / 2 + 4) {
+    y = by + textH / 2 + margin; // 위가 부족하면 bbox 아래로
+  }
+
+  // 배경
+  ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+  ctx.fillRect(
+    x - textW / 2 - paddingX,
+    y - textH / 2 - paddingY,
+    textW + paddingX * 2,
+    textH + paddingY * 2
+  );
+
+  // 텍스트
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText(text, x, y);
+
+  ctx.restore();
+}
+
+
+// ==================================================
+// MAIN COMPONENT
+// ==================================================
+interface FaceMeshProcessorProps { 
+  imageSrc: string; 
+  onRetake: () => void; 
+  onAnalysisComplete?: (emotion: string, level: number, 
+    processedImage: string) => void; 
+    onSaveRequest?: () => void; 
+    isLoggedIn: boolean; 
+    isSaving?: boolean; 
+  } 
+export default function FaceMeshProcessor({ 
+  imageSrc, 
+  onRetake, 
+  onAnalysisComplete, 
+  onSaveRequest, 
+  isLoggedIn, 
+  isSaving = false, 
 }: FaceMeshProcessorProps) {
+  const isRunningRef = useRef(false);
   const [faceLandmarker, setFaceLandmarker] = useState<FaceLandmarker | null>(null);
   const [emotionSession, setEmotionSession] = useState<ort.InferenceSession | null>(null);
   const [scaler, setScaler] = useState<{ mean: number[]; scale: number[] } | null>(null);
@@ -166,60 +275,51 @@ export default function FaceMeshProcessor({
   const { downloadImage } = useShareAndDownload();
 
   // ==================================================
-  // 모델 로딩
+  // 모델 로딩 (FaceMesh + ONNX + scaler)
   // ==================================================
   useEffect(() => {
-    async function loadModels() {
-      // scaler.json
+    async function loadAll() {
       try {
-        // const res = await fetch("/models/(최고)mlp_v2_scaler.json");
-        const res = await fetch("/models/scaler.json");
-
+        // 1) scaler
+        const res = await fetch("/models/mlp_v2_scaler.json");
         const raw = await res.json();
-
-        // 🔥 mean_, scale_ → mean, scale 로 교체
-        const fixed = {
+        setScaler({
           mean: raw.mean_ || raw.mean,
           scale: raw.scale_ || raw.scale,
-        };
-
-        setScaler(fixed);
+        });
       } catch (e) {
-        console.error("❌ Failed to load scaler.json:", e);
+        console.error("Failed to load scaler", e);
       }
 
-      // FaceLandmarker
-      const filesetResolver = await FilesetResolver.forVisionTasks(
+      // 2) FaceLandmarker
+      const resolver = await FilesetResolver.forVisionTasks(
         "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
       );
 
-      const lm = await FaceLandmarker.createFromOptions(filesetResolver, {
+      const lm = await FaceLandmarker.createFromOptions(resolver, {
         baseOptions: {
           modelAssetPath: "/models/face_landmarker.task",
           delegate: "GPU",
         },
-        outputFaceBlendshapes: true,
         runningMode: "IMAGE",
       });
-
       setFaceLandmarker(lm);
 
-      // ONNX 모델 로딩
-      const session = await ort.InferenceSession.create("/models/(최고)mlp_v2.onnx", {
-        executionProviders: ["wasm"],
+      // 3) ONNX session
+      const session = await ort.InferenceSession.create("/models/mlp_v2.onnx", {
+        executionProviders: ["webgpu", "wasm"],
       });
-
       setEmotionSession(session);
     }
 
-    loadModels();
+    loadAll();
   }, []);
 
   // ==================================================
-  // 얼굴 감지 + 감정 분석
+  // 얼굴 인식 + 감정 추론
   // ==================================================
   useEffect(() => {
-    if (!faceLandmarker || !emotionSession || !imageSrc || !scaler) return;
+    if (!faceLandmarker || !emotionSession || !scaler || !imageSrc) return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -244,9 +344,8 @@ export default function FaceMeshProcessor({
       ctx.clearRect(0, 0, W, H);
       ctx.drawImage(img, 0, 0, W, H);
 
-      // FaceMesh detection
+      // FaceMesh detect
       const result = faceLandmarker.detect(img);
-
       if (!result.faceLandmarks.length) {
         setDetectionFailed(true);
         setIsDrawingComplete(true);
@@ -255,24 +354,70 @@ export default function FaceMeshProcessor({
 
       const lm = result.faceLandmarks[0];
 
-      // 1) landmarks → Float32Array(1434)
-      // const vec = landmarksTo1434Vector(lm);
+      // → vector 1434
+      // const vec = landmarksToVec1434(lm);
 
-      const vec = flattenLandmarks(lm, 0, W, H);  // 기본 버전
-      // const vec = flattenLandmarks(lm, 1, W, H);  // 절대좌표 버전
-      // const vec = flattenLandmarks(lm, 2, W, H);  // 중앙 기반
-      // const vec = flattenLandmarks(lm, 3, W, H);  // zyx 버전
+      // 1) 얼굴 bbox 계산
+      const bbox = computeBBox(lm);
 
-      // 2) 감정 추론 (patched)
-      const emo = await runEmotionPatched(emotionSession, vec, scaler);
+      // 2) crop 기준 좌표로 변환
+      const vec = landmarksToVec1434_CropNorm(lm, bbox);
 
-      console.log("🎯 Emotion:", emo);
+      // → emotion inference
+      // const emo = await runEmotion(emotionSession, vec, scaler);
 
-      // 3) 결과 전달
-      const finalImg = canvas.toDataURL("image/png");
-      if (onAnalysisComplete) {
-        onAnalysisComplete(emo.emotion, emo.level, finalImg);
+      if (isRunningRef.current) {
+        console.warn("Emotion inference skipped: session busy");
+        return;
       }
+
+      isRunningRef.current = true;
+
+      try {
+        const emo = await runEmotion(emotionSession, vec, scaler);
+
+        // ==================================================
+        //   감정 텍스트 삽입 블록
+        //   ─ 주석 해제  → 이미지에 글자 삽입
+        //   ─ 전체 주석 → raw 이미지 출력
+        // ================================================== 
+        
+        // const ctx2 = canvas.getContext("2d");
+        // if (ctx2) {
+        //   const label = `${emo.emotion.toUpperCase()}`;
+        //   drawEmotionLabel(
+        //     ctx2,
+        //     label,
+        //     canvas.width * (1 / 2),
+        //     canvas.height * (3 / 4)
+        //   );
+        // }
+
+        const ctx2 = canvas.getContext("2d");
+        if (ctx2) {
+          const label = `${emo.emotion.toUpperCase()}`;
+          drawEmotionLabelAboveBBox(
+            ctx2,
+            label,
+            bbox,              // computeBBox 결과
+            canvas.width,
+            canvas.height
+          );
+        }
+        // ==================================================
+
+        const finalImg = canvas.toDataURL("image/png");
+        if (onAnalysisComplete) {
+          onAnalysisComplete(emo.emotion, emo.level, finalImg);
+        }      
+        console.log(emotionSession.inputNames)
+        console.log(emotionSession.outputNames)
+        console.log("Emotion:", emo);
+      } finally {
+        isRunningRef.current = false;
+      }
+      
+
 
       setIsDrawingComplete(true);
     };
@@ -287,12 +432,13 @@ export default function FaceMeshProcessor({
     downloadImage(url, "today-haru.png");
   };
 
+  // ==================================================
+  // RENDER
+  // ==================================================
   return (
     <div className="w-full h-full">
       <Card className="mobile-container bg-gray-200 relative">
-        {!faceLandmarker || !emotionSession || !scaler ? (
-          <LoadingSpinner />
-        ) : null}
+        {!faceLandmarker || !emotionSession || !scaler ? <LoadingSpinner /> : null}
 
         <div className="aspect-3/4">
           <canvas ref={canvasRef} className="w-full h-full" />
@@ -306,7 +452,7 @@ export default function FaceMeshProcessor({
         )}
       </Card>
 
-      {/* 버튼 UI 유지 */}
+      {/* 버튼 UI */}
       <div className="flex items-center justify-between mt-6 gap-3 w-full max-w-md mx-auto">
         <button
           onClick={onRetake}

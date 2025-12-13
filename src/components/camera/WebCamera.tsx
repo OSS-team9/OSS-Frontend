@@ -1,3 +1,4 @@
+// WebCamera.tsx
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -59,41 +60,95 @@ export default function WebCamera({ onCapture }: WebCameraProps) {
   };
 
   // '사진 찍기' 함수
+  // const takeSnapshot = () => {
+  //   if (videoRef.current && canvasRef.current) {
+  //     const video = videoRef.current;
+  //     const canvas = canvasRef.current;
+  //     canvas.width = video.videoWidth;
+  //     canvas.height = video.videoHeight;
+  //     const context = canvas.getContext("2d");
+
+  //     if (context) {
+  //       // ⭐️ 1. 전면 카메라("user")일 때만 캔버스를 뒤집습니다.
+  //       if (facingMode === "user") {
+  //         context.save(); // 현재 캔버스 상태 저장
+  //         context.scale(-1, 1); // ⭐️ 캔버스를 가로로 뒤집기
+
+  //         // ⭐️ 캔버스가 뒤집혔으므로, 이미지를 그리는 x축 시작점도 반대로(-canvas.width) 변경
+  //         context.drawImage(
+  //           video,
+  //           -canvas.width,
+  //           0,
+  //           canvas.width,
+  //           canvas.height
+  //         );
+
+  //         context.restore(); // 캔버스 상태 원상 복구
+  //       } else {
+  //         // ⭐️ 2. 후면 카메라일 때는 정상적으로 그림
+  //         context.drawImage(video, 0, 0, canvas.width, canvas.height);
+  //       }
+  //     }
+
+  //     const imageDataUrl = canvas.toDataURL("image/png");
+  //     onCapture(imageDataUrl);
+  //     stopCamera();
+  //   }
+  // };
+
   const takeSnapshot = () => {
-    if (videoRef.current && canvasRef.current) {
+      if (!videoRef.current || !canvasRef.current) return;
+
       const video = videoRef.current;
       const canvas = canvasRef.current;
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const context = canvas.getContext("2d");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
 
-      if (context) {
-        // ⭐️ 1. 전면 카메라("user")일 때만 캔버스를 뒤집습니다.
-        if (facingMode === "user") {
-          context.save(); // 현재 캔버스 상태 저장
-          context.scale(-1, 1); // ⭐️ 캔버스를 가로로 뒤집기
+      const vw = video.videoWidth;
+      const vh = video.videoHeight;
 
-          // ⭐️ 캔버스가 뒤집혔으므로, 이미지를 그리는 x축 시작점도 반대로(-canvas.width) 변경
-          context.drawImage(
-            video,
-            -canvas.width,
-            0,
-            canvas.width,
-            canvas.height
-          );
+      // 🔑 미리보기와 동일한 비율 (aspect-3/4)
+      const targetAspect = 3 / 4;
+      const videoAspect = vw / vh;
 
-          context.restore(); // 캔버스 상태 원상 복구
-        } else {
-          // ⭐️ 2. 후면 카메라일 때는 정상적으로 그림
-          context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        }
+      let sx = 0, sy = 0, sw = vw, sh = vh;
+
+      // object-cover와 동일한 crop 계산
+      if (videoAspect > targetAspect) {
+        // 비디오가 더 넓음 → 좌우 crop
+        sw = vh * targetAspect;
+        sx = (vw - sw) / 2;
+      } else {
+        // 비디오가 더 세로로 김 → 상하 crop
+        sh = vw / targetAspect;
+        sy = (vh - sh) / 2;
+      }
+
+      canvas.width = sw;
+      canvas.height = sh;
+
+      // 전면 카메라 좌우 반전 처리
+      if (facingMode === "user") {
+        ctx.save();
+        ctx.scale(-1, 1);
+        ctx.drawImage(
+          video,
+          sx, sy, sw, sh,
+          -sw, 0, sw, sh
+        );
+        ctx.restore();
+      } else {
+        ctx.drawImage(
+          video,
+          sx, sy, sw, sh,
+          0, 0, sw, sh
+        );
       }
 
       const imageDataUrl = canvas.toDataURL("image/png");
       onCapture(imageDataUrl);
       stopCamera();
-    }
-  };
+    };
 
   // 카메라 전환 함수
   const toggleFacingMode = () => {

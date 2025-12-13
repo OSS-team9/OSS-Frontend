@@ -11,8 +11,16 @@ import { dataURLtoFile } from "@/utils/fileUtils";
 
 import WebCamera from "@/components/camera/WebCamera";
 import PhotoUploader from "@/components/camera/PhotoUploader";
-import FaceMeshProcessor from "@/components/camera/FaceMeshProcessor";
+// import FaceMeshProcessor from "@/components/camera/FaceMeshProcessor";
 import { useEmotion } from "@/components/auth/EmotionContext";
+
+import dynamic from "next/dynamic";
+
+const FaceMeshProcessor = dynamic(
+  () => import("@/components/camera/FaceMeshProcessor"),
+  { ssr: false }
+);
+
 
 export default function CameraPage() {
   const router = useRouter();
