@@ -30,7 +30,7 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
       />
 
       {/* 2. 바텀 시트 본문 */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 w-full bg-white rounded-t-4xl p-6 animate-slide-up shadow-2xl max-w-md mx-auto">
+      <div className="mb-16 fixed bottom-0 left-0 right-0 z-50 w-full bg-white rounded-t-4xl p-6 animate-slide-up shadow-2xl max-w-md mx-auto">
         {/* 닫기 핸들바 (선택사항) */}
         <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-6" />
 
