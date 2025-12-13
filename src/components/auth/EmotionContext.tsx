@@ -3,6 +3,11 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 import { EmotionLog } from "@/types";
 
+export interface EmotionItem {
+  emotion: string; // "joy"
+  level: number; // 1, 2, 3
+}
+
 interface EmotionContextType {
   // 기존: 선택된 로그 (상세보기용)
   selectedLog: EmotionLog | null;
@@ -22,16 +27,18 @@ interface EmotionContextType {
   invalidateCache: () => void;
 
   // 스티커 보드 데이터
-  collectedEmotions: string[] | null;
-  setCollectedEmotions: (emotions: string[]) => void;
+  collectedEmotions: EmotionItem[] | null; // ⭐️ string[] -> EmotionItem[] 변경
+  setCollectedEmotions: (emotions: EmotionItem[]) => void;
   invalidateEmotionsCache: () => void;
 
   // 무드 라운지(House) 데이터 캐싱
-  houseEmotion: string | null; // 배치된 감정 아이콘 (예: "joy")
-  setHouseEmotion: (emotion: string | null) => void;
+  houseEmotion: EmotionItem | null; // ⭐️ string -> EmotionItem 변경
+  setHouseEmotion: (emotion: EmotionItem | null) => void;
+
   isHouseFetched: boolean; // 서버에서 불러왔는지 여부
   setIsHouseFetched: (fetched: boolean) => void;
   invalidateHouseCache: () => void; // 저장 후 갱신용
+
   isEmotionsFetched: boolean;
   setIsEmotionsFetched: (fetched: boolean) => void;
 }
@@ -40,16 +47,20 @@ const EmotionContext = createContext<EmotionContextType | undefined>(undefined);
 
 export function EmotionProvider({ children }: { children: ReactNode }) {
   const [selectedLog, setSelectedLog] = useState<EmotionLog | null>(null);
-
-  // ⭐️ 캐싱용 상태들
+  // Main States
   const [logs, setLogs] = useState<EmotionLog[]>([]);
   const [todayData, setTodayData] = useState<EmotionLog | null>(null);
   const [isFetched, setIsFetched] = useState(false);
-  const [collectedEmotions, setCollectedEmotions] = useState<string[] | null>(
-    null
-  );
 
-  const [houseEmotion, setHouseEmotion] = useState<string | null>(null);
+  // House States
+  // ⭐️ 수집된 감정 목록 (중복 허용, 레벨 포함)
+  const [collectedEmotions, setCollectedEmotions] = useState<
+    EmotionItem[] | null
+  >(null);
+
+  // ⭐️ 현재 무드 라운지에 배치된 감정
+  const [houseEmotion, setHouseEmotion] = useState<EmotionItem | null>(null);
+
   const [isHouseFetched, setIsHouseFetched] = useState(false);
   const [isEmotionsFetched, setIsEmotionsFetched] = useState(false);
 
@@ -60,17 +71,16 @@ export function EmotionProvider({ children }: { children: ReactNode }) {
   };
   const invalidateEmotionsCache = () => {
     setCollectedEmotions(null);
+    setIsEmotionsFetched(false);
   };
   const invalidateHouseCache = () => {
     setIsHouseFetched(false);
     setHouseEmotion(null);
-    setIsEmotionsFetched(false);
   };
 
   return (
     <EmotionContext.Provider
       value={{
-        // main
         selectedLog,
         setSelectedLog,
         logs,
@@ -80,7 +90,6 @@ export function EmotionProvider({ children }: { children: ReactNode }) {
         isFetched,
         setIsFetched,
         invalidateCache,
-        // house
         collectedEmotions,
         setCollectedEmotions,
         invalidateEmotionsCache,

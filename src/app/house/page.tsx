@@ -9,10 +9,10 @@ import withAuth from "@/components/auth/withAuth";
 import { useAuth } from "@/components/auth/AuthContext";
 import BorderCard from "@/components/common/BorderCard";
 import EmotionStickerBoard from "@/components/house/EmotionStickerBoard";
-import { useEmotion } from "@/components/auth/EmotionContext";
+import { useEmotion, EmotionItem } from "@/components/auth/EmotionContext";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { useShareAndDownload } from "@/hooks/useShareAndDownload";
-import { toEnglishEmotion } from "@/utils/emotionUtils";
+import { toEnglishEmotion, toKoreanEmotion } from "@/utils/emotionUtils";
 
 const ROOM_BASE_IMAGE = "/images/room/room_base.png";
 const ROOM_DECORATIONS: Record<string, string> = {
@@ -44,7 +44,7 @@ function HousePage() {
   } = useEmotion();
   const { shareImage, canvasToBlob } = useShareAndDownload();
 
-  const [placedEmotion, setPlacedEmotion] = useState<string | null>(null);
+  const [placedEmotion, setPlacedEmotion] = useState<EmotionItem | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(!isHouseFetched); // 캐시 없으면 로딩 시작
 
@@ -58,14 +58,10 @@ function HousePage() {
 
       // (A) 수집된 감정 목록 로드
       // 캐시가 없으면 로드하고 Context에 저장
-      if (!isEmotionsFetched) {
-        // TODO: 실제로는 fetch('/api/emotions/collected')
-        const uniqueSet = new Set(MOCK_COLLECTED_EMOTIONS);
-        const uniqueArray = Array.from(uniqueSet);
-        const englishEmotions = uniqueArray.map((k) => toEnglishEmotion(k));
-
-        setCollectedEmotions(englishEmotions);
-        setIsEmotionsFetched(true);
+      if (isHouseFetched) {
+        setPlacedEmotion(houseEmotion);
+        setIsLoading(false);
+        return;
       }
 
       // (B) ⭐️ 무드 라운지 상태 로드
@@ -79,14 +75,31 @@ function HousePage() {
       // 캐시가 없으면 서버 요청
       console.log("🌐 무드 라운지: 서버 데이터 요청");
       try {
-        // (Mock API 호출 - 0.8초 딜레이)
-        await new Promise((resolve) => setTimeout(resolve, 800));
-        const mockServerData = null; // 처음엔 없음 (또는 "joy" 등)
+        const response = await authFetch(
+          `${process.env.NEXT_PUBLIC_API_HOST}/user/representative-emotion`
+        );
 
-        // ⭐️ 받아온 데이터를 Context와 로컬 state에 저장
-        setHouseEmotion(mockServerData);
-        setPlacedEmotion(mockServerData);
-        setIsHouseFetched(true); // "불러왔음" 표시 (다음엔 캐시 사용)
+        if (!response.ok) {
+          throw new Error("데이터 로드 실패");
+        }
+
+        const data = await response.json();
+
+        // 데이터가 있고 emotion_type이 설정된 경우
+        if (data.state === "success" && data.emotion_type) {
+          // ⭐️ 서버에서 받은 레벨까지 저장
+          const emotionItem: EmotionItem = {
+            emotion: toEnglishEmotion(data.emotion_type),
+            level: data.emotion_level || 3,
+          };
+          setHouseEmotion(emotionItem);
+          setPlacedEmotion(emotionItem);
+        } else {
+          setHouseEmotion(null);
+          setPlacedEmotion(null);
+        }
+
+        setIsHouseFetched(true); // "불러왔음" 표시
       } catch (error) {
         console.error("불러오기 실패:", error);
       } finally {
@@ -107,9 +120,17 @@ function HousePage() {
   ]);
 
   // 2. 스티커 선택 핸들러
-  const handleSelectSticker = (emotion: string) => {
-    // 토글 로직: 이미 선택된 거면 해제
-    setPlacedEmotion(placedEmotion === emotion ? null : emotion);
+  const handleSelectSticker = (item: EmotionItem) => {
+    // ⭐️ 동일한 감정+레벨이면 선택 해제, 아니면 선택
+    if (
+      placedEmotion &&
+      placedEmotion.emotion === item.emotion &&
+      placedEmotion.level === item.level
+    ) {
+      setPlacedEmotion(null);
+    } else {
+      setPlacedEmotion(item);
+    }
   };
 
   // 3. 저장 핸들러 (저장 후 캐시도 업데이트)
@@ -121,17 +142,28 @@ function HousePage() {
 
     setIsSaving(true);
     try {
-      // (서버 저장 로직)
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // 1. 한글 변환
+      const emotionTypeKo = toKoreanEmotion(placedEmotion.emotion);
 
-      console.log(`방 꾸미기 저장 완료: ${placedEmotion}`);
+      // 2. ⭐️ API 요청: 사용자가 선택한 레벨을 그대로 전송
+      const response = await authFetch(
+        `${process.env.NEXT_PUBLIC_API_HOST}/user/representative-emotion`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            emotion_type: emotionTypeKo,
+            emotion_level: placedEmotion.level, // ⭐️ 동적 레벨 적용
+          }),
+        }
+      );
 
-      // ⭐️ [핵심] 저장 성공 시 Context 캐시도 최신값으로 업데이트!
-      setHouseEmotion(placedEmotion);
-      // (이미 isHouseFetched=true 이므로, 다시 들어와도 이 값을 씀)
+      if (!response.ok) throw new Error("저장 실패");
 
-      // (선택) 다른 화면(메인 등)의 캐시 갱신이 필요하면 호출
-      // invalidateEmotionsCache();
+      console.log(
+        `저장 완료: ${placedEmotion.emotion} (Lv.${placedEmotion.level})`
+      );
+      setHouseEmotion(placedEmotion); // 캐시 업데이트
 
       alert("무드 라운지가 저장되었습니다! 🏠✨");
     } catch (error) {
@@ -168,22 +200,21 @@ function HousePage() {
 
       // (2) 수집된 감정 장식들 덧그리기
       if (collectedEmotions) {
-        for (const emotion of collectedEmotions) {
-          const decorationSrc = ROOM_DECORATIONS[emotion];
+        // 감정 종류만 추출 (중복 제거)
+        const uniqueEmotionTypes = new Set(
+          collectedEmotions.map((e) => e.emotion)
+        );
+
+        for (const emotionType of Array.from(uniqueEmotionTypes)) {
+          const decorationSrc = ROOM_DECORATIONS[emotionType];
           if (decorationSrc) {
             const decoImage = new window.Image();
             decoImage.src = decorationSrc;
             decoImage.crossOrigin = "anonymous";
-
             try {
-              await new Promise((resolve, reject) => {
-                decoImage.onload = resolve;
-                decoImage.onerror = reject;
-              });
+              await new Promise((resolve) => (decoImage.onload = resolve));
               ctx.drawImage(decoImage, 0, 0, canvas.width, canvas.height);
-            } catch (e) {
-              console.warn(`장식 로드 실패 (${emotion})`, e);
-            }
+            } catch (e) {}
           }
         }
       }
@@ -191,7 +222,7 @@ function HousePage() {
       // 3) 스티커가 있다면 그리기
       if (placedEmotion) {
         const stickerImage = new window.Image();
-        stickerImage.src = `/images/emotions/${placedEmotion}_3.png`; // 3단계(큰) 이미지
+        stickerImage.src = `/images/emotions/${placedEmotion.emotion}_${placedEmotion.level}.png`; // 3단계(큰) 이미지
         await new Promise((resolve) => (stickerImage.onload = resolve));
 
         // 스티커 위치 및 크기 계산 (화면상의 비율을 캔버스 좌표로 변환)
@@ -275,30 +306,32 @@ function HousePage() {
           />
 
           {/* 2. 수집된 감정 장식들 (레이어드) */}
-          {collectedEmotions?.map((emotion) => {
-            const decorationSrc = ROOM_DECORATIONS[emotion];
-            if (!decorationSrc) return null;
-
-            return (
-              <div
-                key={emotion}
-                className="absolute inset-0 z-1 pointer-events-none"
-              >
-                <Image
-                  src={decorationSrc}
-                  alt={`${emotion} decoration`}
-                  fill
-                  className="object-cover"
-                />
-              </div>
-            );
-          })}
+          {collectedEmotions &&
+            Array.from(new Set(collectedEmotions.map((e) => e.emotion))).map(
+              (emotionType) => {
+                const decorationSrc = ROOM_DECORATIONS[emotionType];
+                if (!decorationSrc) return null;
+                return (
+                  <div
+                    key={emotionType}
+                    className="absolute inset-0 z-1 pointer-events-none"
+                  >
+                    <Image
+                      src={decorationSrc}
+                      alt="decoration"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                );
+              }
+            )}
 
           {/* 2. ⭐️ 배치된 스티커 (X 버튼 제거됨) */}
           {placedEmotion && (
-            <div className="absolute bottom-[0%] left-1/2 -translate-x-1/2 w-80 h-80 animate-bounce-slow">
+            <div className="absolute bottom-[0%] left-1/2 -translate-x-1/2 w-80 h-80 animate-bounce-slow z-10">
               <Image
-                src={`/images/emotions/${placedEmotion}_3.png`}
+                src={`/images/emotions/${placedEmotion.emotion}_${placedEmotion.level}.png`}
                 alt="Placed Sticker"
                 fill
                 className="object-contain drop-shadow-xl filter brightness-110"
