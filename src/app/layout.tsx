@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 
@@ -32,9 +32,19 @@ const pretendard = localFont({
   display: "swap",
 });
 
+// ⭐️ 1. 뷰포트 설정 (모바일에서 확대/축소 방지 -> 앱 느낌 강화)
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: "#EADCC7", // 상단 상태바 색상 통일
+};
+
 export const metadata: Metadata = {
   title: "오늘:하루",
   description: "Daily의 Emotion을 Face으로 record하다",
+  manifest: "/manifest.json",
   openGraph: {
     title: "오늘:하루",
     description: "Daily의 Emotion을 Face으로 record하다",

@@ -1,0 +1,21 @@
+{
+  "name": "오늘:하루",
+  "short_name": "오늘하루",
+  "description": "Daily의 Emotion을 Face으로 record하다",
+  "start_url": "/main",
+  "display": "standalone",
+  "background_color": "#EADCC7",
+  "theme_color": "#EADCC7",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
