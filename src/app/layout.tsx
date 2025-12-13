@@ -38,7 +38,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#EADCC7", // 상단 상태바 색상 통일
+  themeColor: "#56412c", // 상단 상태바 색상 통일
 };
 
 export const metadata: Metadata = {
