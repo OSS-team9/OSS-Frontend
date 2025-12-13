@@ -9,6 +9,7 @@ import CalendarView from "@/components/calendar/CalendarView";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { EmotionLog } from "@/types";
 import { toEnglishEmotion } from "@/utils/emotionUtils";
+import MonthlyEmotionChart from "@/components/dashboard/MonthlyEmotionChart";
 
 function CalendarPage() {
   const router = useRouter();
@@ -93,11 +94,18 @@ function CalendarPage() {
           <LoadingSpinner />
         </div>
       ) : (
-        <CalendarView
-          logs={logs}
-          currentDate={currentDate}
-          onDateChange={setCurrentDate}
-        />
+        <div className="flex flex-col gap-6">
+          {" "}
+          {/* ⭐️ 간격(gap) 추가 */}
+          {/* 1. 캘린더 */}
+          <CalendarView
+            logs={logs}
+            currentDate={currentDate}
+            onDateChange={setCurrentDate}
+          />
+          {/* 2. ⭐️ 이번 달 감정 차트 (여기에 추가!) */}
+          <MonthlyEmotionChart logs={logs} />
+        </div>
       )}
     </div>
   );
