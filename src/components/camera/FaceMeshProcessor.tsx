@@ -437,14 +437,14 @@ export default function FaceMeshProcessor({
           <div className="flex flex-col items-center space-y-4 w-full">
             <button
               onClick={handleShare}
-              className="w-full max-w-sm py-3.5 bg-white border-2 border-app-bg-secondary text-app-bg-secondary font-semibold rounded-2xl shadow-sm hover:bg-[#FAF7F2]"
+              className="w-full max-w-sm py-3.5 bg-white border-2 border-app-bg-secondary text-app-bg-secondary font-bold rounded-2xl shadow-sm hover:bg-[#FAF7F2]"
             >
               공유하기
             </button>
 
             <button
               onClick={handleDownload}
-              className="w-full max-w-sm py-3.5 bg-[#F5EFE6] text-[#56412C] rounded-2xl shadow-sm hover:bg-[#EADCC7]"
+              className="w-full max-w-sm py-3.5 bg-[#F5EFE6] font-bold text-[#56412C] rounded-2xl shadow-sm hover:bg-[#EADCC7]"
             >
               이미지로 다운로드
             </button>
