@@ -49,7 +49,7 @@ export default function LandingPage() {
   if (token) return null;
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center bg-[--color-app-bg]">
+    <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center bg-app-bg">
       <div className="mb-12">
         <h1 className="text-5xl font-bold font-lotte text-black mb-2 drop-shadow-sm">
           오늘:하루
