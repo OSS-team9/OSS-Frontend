@@ -14,7 +14,7 @@ interface DailyResultProps {
 
 export default function DailyResult({ data }: DailyResultProps) {
   const { shareImage } = useShareAndDownload();
-  const displayDate = data?.date || getFormattedDate();
+  const displayDate = getFormattedDate(data?.date);
 
   const characterImage = data
     ? `/images/emotions/${data.emotion}_${data.emotionLevel}.png`

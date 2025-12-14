@@ -1,12 +1,13 @@
-export function getFormattedDate() {
-  const now = new Date();
+export function getFormattedDate(dateString?: string) {
+  // 1. 들어온 날짜가 있으면 그걸 쓰고, 없으면 오늘(new Date)을 씀
+  const targetDate = dateString ? new Date(dateString) : new Date();
 
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-
-  const day = String(now.getDate()).padStart(2, "0");
+  // 2. 이제 targetDate를 기준으로 계산
+  const month = String(targetDate.getMonth() + 1).padStart(2, "0");
+  const day = String(targetDate.getDate()).padStart(2, "0");
 
   const weekDays = ["일", "월", "화", "수", "목", "금", "토"];
-  const weekDay = weekDays[now.getDay()];
+  const weekDay = weekDays[targetDate.getDay()];
 
   return `${month}. ${day} (${weekDay})`;
 }
