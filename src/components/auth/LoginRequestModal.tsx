@@ -7,12 +7,14 @@ interface LoginRequestModalProps {
   onClose: () => void;
   onLoginSuccess: (credentialResponse: any) => void;
   onLoginError: () => void;
+  onGoHome?: () => void;
 }
 
 export default function LoginRequestModal({
   onClose,
   onLoginSuccess,
   onLoginError,
+  onGoHome,
 }: LoginRequestModalProps) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
@@ -58,7 +60,7 @@ export default function LoginRequestModal({
 
           {/* 취소 버튼 */}
           <button
-            onClick={onClose}
+            onClick={onGoHome || onClose}
             className="text-gray-400 text-xs underline hover:text-gray-600 mt-2"
           >
             저장하지 않고 홈으로 가기

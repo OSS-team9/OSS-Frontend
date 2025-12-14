@@ -223,6 +223,10 @@ export default function CameraPage() {
     }
   };
 
+  const handleGoHome = () => {
+    router.push("/");
+  };
+
   return (
     <main className="flex min-h-screen flex-col items-center bg-app-bg pb-16">
       {!tempImage && (
@@ -260,6 +264,7 @@ export default function CameraPage() {
           onClose={() => setIsLoginModalOpen(false)}
           onLoginSuccess={handleLoginSuccess}
           onLoginError={() => alert("로그인 실패")}
+          onGoHome={handleGoHome}
         />
       )}
 
