@@ -12,6 +12,7 @@ import { EmotionLog } from "@/types";
 import { toEnglishEmotion } from "@/utils/emotionUtils";
 import withAuth from "@/components/auth/withAuth";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
+import InstallBanner from "@/components/common/InstallBanner";
 
 function MainPage() {
   const { token, authFetch } = useAuth();
@@ -115,6 +116,7 @@ function MainPage() {
           <DailyResult data={todayData} />
         </div>
       </section>
+      <InstallBanner />
       <section className="px-4 py-3">
         <div className="mobile-container">
           {/* ⭐️ 감정 기록 (데이터 전달) */}
