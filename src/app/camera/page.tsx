@@ -136,7 +136,7 @@ export default function CameraPage() {
         });
         if (response.status === 401) {
           alert("로그인 세션이 만료되었습니다. 다시 로그인해주세요.");
-          router.push("/");
+          router.replace("/");
           return;
         }
       } else {
@@ -170,7 +170,7 @@ export default function CameraPage() {
         setIsFullLoading(false); // 화면 로딩 끝
         setToastMessage("소중한 기록이 저장되었어요!");
         setIsToastVisible(true);
-        setTimeout(() => router.push("/main"), 1500);
+        setTimeout(() => router.replace("/main"), 1500);
       }
     } catch (e) {
       console.error(e);
@@ -232,7 +232,7 @@ export default function CameraPage() {
   };
 
   const handleGoHome = () => {
-    router.push("/");
+    router.replace("/");
   };
 
   return (
@@ -278,7 +278,7 @@ export default function CameraPage() {
 
       {/* 4. 저장 완료 모달 (기존 회원용) */}
       {isSaveSuccess && (
-        <SaveSuccessModal onClose={() => router.push("/main")} />
+        <SaveSuccessModal onClose={() => router.replace("/main")} />
       )}
 
       {/* 5. 토스트 메시지 (신규 로그인 후 저장용) */}

@@ -1,49 +1,70 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation"; // useRouter 추가
 
 import {
-  HiHome, // 🏠 (Solid)
-  HiOutlineHome, // 🏠 (Outline)
-  HiPlusCircle, // ➕ (Solid)
-  HiOutlinePlusCircle, // ➕ (Outline)
+  HiHome,
+  HiOutlineHome,
+  HiPlusCircle,
+  HiOutlinePlusCircle,
 } from "react-icons/hi2";
 
 import { RiSofaLine, RiSofaFill } from "react-icons/ri";
 
 export default function BottomNav() {
-  const pathname = usePathname(); // 훅을 사용해 현재 URL 경로를 가져옵니다.
+  const router = useRouter();
+  const pathname = usePathname();
+
   const iconWrapperStyle =
-    "flex items-center justify-center w-10 h-10 text-app-bg";
+    "flex items-center justify-center w-full h-full text-app-bg";
   const iconStyle = "w-7 h-7";
+
+  const handleNavClick = (path: string) => {
+    if (pathname === path) return;
+    router.replace(path);
+  };
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 h-16 bg-app-bg-tertiary z-100">
+    <nav className="fixed bottom-0 left-0 right-0 h-16 bg-app-bg-tertiary z-[100]">
       <div className="flex justify-around items-center h-full max-w-md mx-auto">
-        {/* 'Link' 태그로 각 페이지를 연결합니다. */}
-        <Link href="/main" className={iconWrapperStyle}>
+        {/* 1. 메인 탭 */}
+        <button
+          onClick={() => handleNavClick("/main")}
+          className={iconWrapperStyle}
+          type="button"
+        >
           {pathname === "/main" ? (
-            <HiHome className={`${iconStyle} `} /> // 활성 (Solid + 검은색)
+            <HiHome className={iconStyle} />
           ) : (
-            <HiOutlineHome className={`${iconStyle} `} /> // 비활성 (Outline + 연한 검은색)
+            <HiOutlineHome className={iconStyle} />
           )}
-        </Link>
+        </button>
 
-        <Link href="/camera" className={iconWrapperStyle}>
+        {/* 2. 카메라 탭 */}
+        <button
+          onClick={() => handleNavClick("/camera")}
+          className={iconWrapperStyle}
+          type="button"
+        >
           {pathname === "/camera" ? (
-            <HiPlusCircle className={`${iconStyle}`} />
+            <HiPlusCircle className={iconStyle} />
           ) : (
-            <HiOutlinePlusCircle className={`${iconStyle} `} />
+            <HiOutlinePlusCircle className={iconStyle} />
           )}
-        </Link>
+        </button>
 
-        <Link href="/house" className={iconWrapperStyle}>
+        {/* 3. 무드 라운지 탭 */}
+        <button
+          onClick={() => handleNavClick("/house")}
+          className={iconWrapperStyle}
+          type="button"
+        >
           {pathname === "/house" ? (
-            <RiSofaFill className={`${iconStyle} `} />
+            <RiSofaFill className={iconStyle} />
           ) : (
-            <RiSofaLine className={`${iconStyle} `} />
+            <RiSofaLine className={iconStyle} />
           )}
-        </Link>
+        </button>
       </div>
     </nav>
   );
