@@ -128,6 +128,11 @@ export default function CameraPage() {
           },
           body: formData,
         });
+        if (response.status === 401) {
+          alert("로그인 세션이 만료되었습니다. 다시 로그인해주세요.");
+          router.push("/");
+          return;
+        }
       } else {
         response = await authFetch(
           `${process.env.NEXT_PUBLIC_API_HOST}/emotions`,
