@@ -222,18 +222,17 @@ function HousePage() {
       // 3) 스티커가 있다면 그리기
       if (placedEmotion) {
         const stickerImage = new window.Image();
-        stickerImage.src = `/images/emotions/${placedEmotion.emotion}_${placedEmotion.level}.png`; // 3단계(큰) 이미지
+        stickerImage.src = `/images/emotions/${placedEmotion.emotion}_${placedEmotion.level}.png`;
         await new Promise((resolve) => (stickerImage.onload = resolve));
 
-        // 스티커 위치 및 크기 계산 (화면상의 비율을 캔버스 좌표로 변환)
-        // 화면 기준: bottom-[15%], w-40, h-40 -> 캔버스 기준 좌표 계산
-        // (정확한 비율은 실제 이미지 크기에 따라 조정이 필요할 수 있음)
-        const stickerWidth = canvas.width * 0.8; // 예: 캔버스 너비의 40%
-        const stickerHeight = stickerWidth; // 정사각형 가정
-        const x = (canvas.width - stickerWidth) / 2; // 중앙 정렬
-        const y = canvas.height - stickerHeight; // 바닥에서 15% 위
+        const stickerSize = canvas.width * 0.6; // 너비의 45% 크기
 
-        ctx.drawImage(stickerImage, x, y, stickerWidth, stickerHeight);
+        const x = (canvas.width - stickerSize) / 2; // 중앙 정렬
+
+        //  Y 좌표 맞추기
+        const y = canvas.height * 0.95 - stickerSize;
+
+        ctx.drawImage(stickerImage, x, y, stickerSize, stickerSize);
       }
 
       // 4) 캔버스를 이미지 파일(Blob)로 변환
@@ -290,8 +289,8 @@ function HousePage() {
         </div>
       </div>
 
-      <BorderCard className="p-0 w-full max-w-md mx-auto shadow-xl">
-        <div className="relative w-full aspect-9/16 bg-gray-200 overflow-hidden">
+      <BorderCard className="p-0 w-full max-w-md mx-auto border-10">
+        <div className="relative w-full aspect-1/2 bg-gray-200 overflow-hidden">
           {isLoading && (
             <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/50 backdrop-blur-sm">
               <LoadingSpinner />
@@ -329,7 +328,7 @@ function HousePage() {
 
           {/* 2. ⭐️ 배치된 스티커 (X 버튼 제거됨) */}
           {placedEmotion && (
-            <div className="absolute bottom-[0%] left-1/2 -translate-x-1/2 w-80 h-80 animate-bounce-slow z-10">
+            <div className="absolute bottom-[5%] left-1/2 -translate-x-1/2 w-60 h-60 animate-bounce-slow z-10">
               <Image
                 src={`/images/emotions/${placedEmotion.emotion}_${placedEmotion.level}.png`}
                 alt="Placed Sticker"
