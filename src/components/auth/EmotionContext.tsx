@@ -65,9 +65,20 @@ export function EmotionProvider({ children }: { children: ReactNode }) {
   const [isEmotionsFetched, setIsEmotionsFetched] = useState(false);
 
   const invalidateCache = () => {
+    console.log("모든 캐시 초기화");
+
+    // 1. 메인/캘린더 캐시
     setIsFetched(false);
     setLogs([]);
     setTodayData(null);
+
+    // 2. [하우스] 중앙 스티커 캐시 끄기
+    setIsHouseFetched(false);
+    setHouseEmotion(null);
+
+    // 3. [하우스] 배경 장식 캐시 끄기
+    setIsEmotionsFetched(false);
+    setCollectedEmotions(null);
   };
   const invalidateEmotionsCache = () => {
     setCollectedEmotions(null);
