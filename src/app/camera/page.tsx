@@ -13,6 +13,9 @@ import WebCamera from "@/components/camera/WebCamera";
 import PhotoUploader from "@/components/camera/PhotoUploader";
 // import FaceMeshProcessor from "@/components/camera/FaceMeshProcessor";
 import { useEmotion } from "@/components/auth/EmotionContext";
+import SaveSuccessModal from "@/components/camera/SaveSuccessModal";
+import LoginRequestModal from "@/components/auth/LoginRequestModal";
+import Toast from "@/components/common/Toast";
 
 import dynamic from "next/dynamic";
 
@@ -21,10 +24,10 @@ const FaceMeshProcessor = dynamic(
   { ssr: false }
 );
 
-
 export default function CameraPage() {
   const router = useRouter();
   const { token, login, authFetch } = useAuth();
+  const { invalidateCache } = useEmotion();
 
   // 1. 상태 관리 (단순화: tempImage 유무로 화면 전환)
   const [tempImage, setTempImage] = useState<string | null>(null);
@@ -37,16 +40,20 @@ export default function CameraPage() {
   const [finalProcessedImage, setFinalProcessedImage] = useState<string | null>(
     null
   );
+
+  // 모달 상태 관리
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isSaveSuccess, setIsSaveSuccess] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  const [showLoginModal, setShowLoginModal] = useState(false);
-
-  const { invalidateCache } = useEmotion();
+  // Toast 상태 추가
+  const [toastMessage, setToastMessage] = useState("");
+  const [isToastVisible, setIsToastVisible] = useState(false);
 
   // 3. 촬영/업로드 완료 핸들러
   const handleCapture = (imageSrc: string) => {
     setTempImage(imageSrc);
-    setShowLoginModal(false);
+    setIsLoginModalOpen(false);
   };
 
   // 4. 분석 완료 핸들러 (기능 유지)
@@ -58,8 +65,7 @@ export default function CameraPage() {
     setAnalyzedResult({ emotion, level });
     setFinalProcessedImage(processedImage);
     if (!token) {
-      // 비로그인: 1초 뒤 로그인 유도 모달
-      setTimeout(() => setShowLoginModal(true), 2000);
+      setTimeout(() => setIsLoginModalOpen(true), 1500);
     }
   };
 
@@ -69,7 +75,8 @@ export default function CameraPage() {
     emotionEn: string,
     level: number,
     imageToUpload?: string,
-    manualToken?: string
+    manualToken?: string,
+    showModal: boolean = true
   ) => {
     setIsSaving(true);
     try {
@@ -140,11 +147,23 @@ export default function CameraPage() {
       }
 
       console.log("서버 저장 완료");
-
       invalidateCache();
 
-      alert("저장되었습니다!");
-      router.push("/main");
+      setIsSaving(false);
+
+      if (showModal) {
+        // [Case A] 일반 저장 -> 성공 모달 띄움
+        setIsSaveSuccess(true);
+      } else {
+        // [Case B] 로그인 후 저장 -> 토스트 띄우고 메인으로 이동
+        setToastMessage("저장이 완료되었습니다!");
+        setIsToastVisible(true);
+
+        // 1.5초 뒤 메인으로 이동 (토스트 보여줄 시간 확보)
+        setTimeout(() => {
+          router.push("/main");
+        }, 1500);
+      }
     } catch (e) {
       console.error(e);
       alert("저장 중 오류가 발생했습니다.");
@@ -167,15 +186,22 @@ export default function CameraPage() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
 
+      // 1. 앱 로그인 상태 업데이트
       login(data.access_token);
 
-      if (analyzedResult && finalProcessedImage) {
-        saveAndRedirect(
+      // 2. ⭐️ 로그인 모달을 '먼저' 확실하게 닫음
+      setIsLoginModalOpen(false);
+
+      // 3. 분석 결과가 있으면 저장 진행
+      if (analyzedResult) {
+        // 약간의 텀을 주어 모달이 닫힌 후 저장이 시작되는 느낌을 줌 (선택사항이나 UX상 좋음)
+        await saveAndRedirect(
           data.access_token,
           analyzedResult.emotion,
           analyzedResult.level,
-          finalProcessedImage,
-          data.access_token
+          finalProcessedImage || undefined,
+          data.access_token,
+          false
         );
       }
     } catch (err) {
@@ -184,17 +210,11 @@ export default function CameraPage() {
     }
   };
 
-  const handleModalClose = () => {
-    setShowLoginModal(false);
-  };
-
-  const handleGoHome = () => {
-    router.push("/");
-  };
-
+  // 7. 사용자가 '저장하기' 버튼을 눌렀을 때 실행되는 함수
   const handleSaveAction = () => {
     if (!token) {
-      setShowLoginModal(true); // 로그인 안 했으면 모달 띄우기
+      setIsLoginModalOpen(true);
+      return;
     } else {
       // 로그인 했으면 저장하고 이동
       if (analyzedResult) {
@@ -214,66 +234,38 @@ export default function CameraPage() {
       )}
 
       {tempImage && (
-        <>
-          <div className="w-full max-w-md">
-            <FaceMeshProcessor
-              imageSrc={tempImage}
-              onRetake={() => {
-                setTempImage(null);
-                setShowLoginModal(false);
-              }}
-              onAnalysisComplete={handleAnalysisComplete}
-              isLoggedIn={!!token}
-              onSaveRequest={handleSaveAction}
-              isSaving={isSaving}
-            />
-          </div>
+        <div className="w-full max-w-md">
+          <FaceMeshProcessor
+            imageSrc={tempImage}
+            onRetake={() => {
+              setTempImage(null);
+              setIsLoginModalOpen(false);
+            }}
+            onAnalysisComplete={handleAnalysisComplete}
+            isLoggedIn={!!token}
+            onSaveRequest={handleSaveAction}
+            isSaving={isSaving}
+          />
+        </div>
+      )}
+      <Toast
+        message={toastMessage}
+        isVisible={isToastVisible}
+        onClose={() => setIsToastVisible(false)}
+      />
 
-          {/* 로그인 유도 모달 */}
-          {showLoginModal && (
-            <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/60 backdrop-blur-sm w-screen h-screen">
-              <div className="bg-white p-6 rounded-2xl shadow-2xl text-center w-full max-w-xs border-2 border-white relative m-4">
-                {/* ⭐️ X 버튼: 이제 모달만 닫습니다 */}
-                <button
-                  onClick={handleModalClose}
-                  className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors p-1"
-                  aria-label="닫기"
-                >
-                  <IoClose size={24} />
-                </button>
+      {/* 👇 1. 로그인 유도 모달 (GoogleLogin 핸들러 연결) */}
+      {isLoginModalOpen && (
+        <LoginRequestModal
+          onClose={() => setIsLoginModalOpen(false)}
+          onLoginSuccess={handleLoginSuccess}
+          onLoginError={() => alert("로그인 실패")}
+        />
+      )}
 
-                <div className="text-4xl mb-3 mt-2">💾</div>
-                <h3 className="text-xl font-bold text-black mb-2">
-                  결과를 저장할까요?
-                </h3>
-                <p className="text-gray-600 text-sm mb-6">
-                  로그인하면 분석된 감정 기록을
-                  <br />
-                  언제든 다시 볼 수 있어요.
-                </p>
-
-                <div className="flex justify-center mb-3">
-                  <GoogleLogin
-                    onSuccess={handleLoginSuccess}
-                    onError={() => alert("로그인 실패")}
-                    theme="filled_black"
-                    shape="pill"
-                    text="signin_with"
-                    width="240"
-                  />
-                </div>
-
-                {/* ⭐️ 하단 버튼: 홈으로 이동 */}
-                <button
-                  onClick={handleGoHome}
-                  className="text-gray-400 text-xs underline hover:text-gray-600"
-                >
-                  저장하지 않고 홈으로 가기
-                </button>
-              </div>
-            </div>
-          )}
-        </>
+      {/* 👇 2. 저장 완료 모달 */}
+      {isSaveSuccess && (
+        <SaveSuccessModal onClose={() => router.push("/main")} />
       )}
     </main>
   );
