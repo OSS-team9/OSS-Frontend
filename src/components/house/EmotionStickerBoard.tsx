@@ -71,7 +71,7 @@ export default function EmotionStickerBoard({
     >
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full h-12 shrink-0 flex justify-center items-center cursor-pointer hover:bg-white/5 transition-colors outline-none"
+        className="w-full h-12 shrink-0 flex justify-center items-center cursor-pointer transition-colors outline-none"
       >
         {isOpen ? (
           <IoChevronDown className="text-white/80 text-2xl animate-bounce" />
