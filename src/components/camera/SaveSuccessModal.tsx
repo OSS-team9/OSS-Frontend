@@ -7,67 +7,33 @@ import {
   IoHomeOutline,
   IoCheckmarkCircle,
 } from "react-icons/io5";
+import { usePWAInstall } from "@/hooks/usePWAInstall";
 
 interface SaveSuccessModalProps {
   onClose: () => void; // 홈으로 이동하는 함수
 }
 
 export default function SaveSuccessModal({ onClose }: SaveSuccessModalProps) {
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [isIos, setIsIos] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(false);
-
-  useEffect(() => {
-    // 1. 이미 앱 모드인지 확인
-    const isInStandaloneMode =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      (window.navigator as any).standalone;
-    if (isInStandaloneMode) {
-      setIsStandalone(true);
-    }
-
-    // 2. iOS 확인
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    const isIosDevice = /iphone|ipad|ipod/.test(userAgent);
-    setIsIos(isIosDevice);
-
-    // 3. 설치 이벤트 감지
-    const handleBeforeInstallPrompt = (e: any) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-
-    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-
-    return () => {
-      window.removeEventListener(
-        "beforeinstallprompt",
-        handleBeforeInstallPrompt
-      );
-    };
-  }, []);
+  const { isInstallable, triggerInstall, isIos } = usePWAInstall();
 
   const handleInstallClick = async () => {
-    // iOS는 설치 버튼 동작 안 함 -> 공유 버튼 안내 띄우거나 바로 홈으로
     if (isIos) {
       alert("브라우저 하단 공유 버튼을 눌러 '홈 화면에 추가'해주세요!");
       return;
     }
 
-    if (!deferredPrompt) {
-      // 이미 설치했거나 지원 안 하는 경우 -> 그냥 홈으로
-      onClose();
-      return;
-    }
-
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === "accepted") {
-      setDeferredPrompt(null);
-      // 설치 수락 후 홈으로 이동
+    const installed = await triggerInstall();
+    if (installed) {
+      // 설치 완료하면 잠시 뒤 홈으로
       setTimeout(onClose, 1000);
     }
   };
+
+  // 앱 모드인지 확인 (이미 앱으로 켰으면 버튼 안 보여주기 위해)
+  const isStandalone =
+    typeof window !== "undefined" &&
+    (window.matchMedia("(display-mode: standalone)").matches ||
+      (window.navigator as any).standalone);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
@@ -87,8 +53,9 @@ export default function SaveSuccessModal({ onClose }: SaveSuccessModalProps) {
         </p>
 
         <div className="flex flex-col gap-3">
-          {/* ⭐️ 1. 설치 유도 버튼 (앱이 아닐 때만 표시) */}
-          {!isStandalone && (
+          {/* 설치 가능한 상태이거나 iOS일 때만 버튼 표시 */}
+          {/* 이미 앱(Standalone)이면 안 보여줌 */}
+          {!isStandalone && (isInstallable || isIos) && (
             <button
               onClick={handleInstallClick}
               className="w-full py-4 bg-[#56412C] text-white font-bold rounded-2xl shadow-lg hover:bg-[#3E2E1E] transition-transform active:scale-95 flex items-center justify-center gap-2"
