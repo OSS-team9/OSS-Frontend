@@ -6,6 +6,7 @@ import {
   IoDownloadOutline,
   IoHomeOutline,
   IoCheckmarkCircle,
+  IoEllipsisVertical,
 } from "react-icons/io5";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 
@@ -14,21 +15,24 @@ interface SaveSuccessModalProps {
 }
 
 export default function SaveSuccessModal({ onClose }: SaveSuccessModalProps) {
-  const { isInstallable, triggerInstall, isIos } = usePWAInstall();
+  const { isInstallable, isInstalled, triggerInstall, isIos } = usePWAInstall();
+
+  // 수동 설치 가이드(툴팁)를 보여줄지 여부
+  const [showManualGuide, setShowManualGuide] = useState(false);
 
   const handleInstallClick = async () => {
     if (isIos) {
       alert("브라우저 하단 공유 버튼을 눌러 '홈 화면에 추가'해주세요!");
       return;
     }
-
-    const installed = await triggerInstall();
-    if (installed) {
-      // 설치 완료하면 잠시 뒤 홈으로
-      setTimeout(onClose, 1000);
+    if (isInstallable) {
+      const installed = await triggerInstall();
+      if (installed) setTimeout(onClose, 1000);
+      return;
     }
+    setShowManualGuide(true);
   };
-
+  const showInstallButton = !isInstalled;
   // 앱 모드인지 확인 (이미 앱으로 켰으면 버튼 안 보여주기 위해)
   const isStandalone =
     typeof window !== "undefined" &&
@@ -49,30 +53,62 @@ export default function SaveSuccessModal({ onClose }: SaveSuccessModalProps) {
         <p className="text-gray-500 text-sm mb-8">
           오늘의 감정이 기록되었습니다.
           <br />
-          내일도 잊지 않고 기록해볼까요?
+          {!isInstalled && "앱을 설치하면 더 편하게 기록할 수 있어요!"}
         </p>
 
+        {/* ⭐️ 수동 설치 가이드 (툴팁) */}
+        {showManualGuide && (
+          <div className="absolute top-0 left-0 w-full h-full bg-black/90 z-20 flex flex-col items-center justify-center text-white p-6 animate-fade-in">
+            <h3 className="text-lg font-bold mb-4">설치 방법</h3>
+            <div className="flex flex-col gap-4 text-sm text-left w-full bg-gray-800 p-4 rounded-xl">
+              <div className="flex items-center gap-3">
+                <span className="w-6 h-6 rounded-full bg-white text-black flex items-center justify-center font-bold text-xs">
+                  1
+                </span>
+                <span>
+                  브라우저 우측 상단 <IoEllipsisVertical className="inline" />{" "}
+                  메뉴 클릭
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="w-6 h-6 rounded-full bg-white text-black flex items-center justify-center font-bold text-xs">
+                  2
+                </span>
+                <span className="flex items-center gap-1">
+                  <IoDownloadOutline /> <strong>[앱 설치]</strong> 또는
+                  <br />
+                  <strong>[홈 화면에 추가]</strong> 선택
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowManualGuide(false)}
+              className="mt-6 px-6 py-2 border border-white/30 rounded-full text-sm hover:bg-white/10"
+            >
+              알겠어요
+            </button>
+          </div>
+        )}
+
         <div className="flex flex-col gap-3">
-          {/* 설치 가능한 상태이거나 iOS일 때만 버튼 표시 */}
-          {/* 이미 앱(Standalone)이면 안 보여줌 */}
-          {!isStandalone && (isInstallable || isIos) && (
+          {/* 설치 버튼 (이벤트가 없어도 뜸) */}
+          {showInstallButton && (
             <button
               onClick={handleInstallClick}
               className="w-full py-4 bg-[#56412C] text-white font-bold rounded-2xl shadow-lg hover:bg-[#3E2E1E] transition-transform active:scale-95 flex items-center justify-center gap-2"
             >
               <IoDownloadOutline size={20} />
-              {isIos ? "앱으로 추가하기" : "앱 설치하고 계속하기"}
+              {isInstallable ? "앱 설치하고 계속하기" : "앱 설치 방법 보기"}
             </button>
           )}
 
-          {/* 2. 홈으로 가기 버튼 */}
           <button
             onClick={onClose}
             className={`w-full py-4 font-bold rounded-2xl transition-colors flex items-center justify-center gap-2
               ${
-                !isStandalone
-                  ? "bg-[#F5EFE6] text-[#8D7B68] hover:bg-[#EADCC7]" // 설치 버튼 있을 땐 보조 버튼 스타일
-                  : "bg-[#56412C] text-white hover:bg-[#3E2E1E] shadow-lg" // 설치 버튼 없으면 메인 버튼 스타일
+                showInstallButton
+                  ? "bg-[#F5EFE6] text-[#8D7B68] hover:bg-[#EADCC7]"
+                  : "bg-[#56412C] text-white hover:bg-[#3E2E1E] shadow-lg"
               }`}
           >
             <IoHomeOutline size={18} />
