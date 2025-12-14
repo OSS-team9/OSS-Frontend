@@ -16,6 +16,7 @@ import { useEmotion } from "@/components/auth/EmotionContext";
 import SaveSuccessModal from "@/components/camera/SaveSuccessModal";
 import LoginRequestModal from "@/components/auth/LoginRequestModal";
 import Toast from "@/components/common/Toast";
+import FullScreenLoader from "@/components/common/FullScreenLoader";
 
 import dynamic from "next/dynamic";
 
@@ -44,11 +45,14 @@ export default function CameraPage() {
   // 모달 상태 관리
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isSaveSuccess, setIsSaveSuccess] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  const [isSaving, setIsSaving] = useState(false); // 기능적 로딩
 
   // Toast 상태 추가
   const [toastMessage, setToastMessage] = useState("");
   const [isToastVisible, setIsToastVisible] = useState(false);
+
+  // 전체 화면 로딩 상태 추가
+  const [isFullLoading, setIsFullLoading] = useState(false);
 
   // 3. 촬영/업로드 완료 핸들러
   const handleCapture = (imageSrc: string) => {
@@ -79,6 +83,8 @@ export default function CameraPage() {
     showModal: boolean = true
   ) => {
     setIsSaving(true);
+    setIsFullLoading(true);
+
     try {
       const emotionKo = toKoreanEmotion(emotionEn); // joy -> 기쁨
       const now = new Date();
@@ -154,20 +160,17 @@ export default function CameraPage() {
       console.log("서버 저장 완료");
       invalidateCache();
 
-      setIsSaving(false);
+      // 성공 시 처리
+      setIsSaving(false); // 기능적 로딩 끝
 
       if (showModal) {
-        // [Case A] 일반 저장 -> 성공 모달 띄움
+        setIsFullLoading(false); // 화면 로딩 끝
         setIsSaveSuccess(true);
       } else {
-        // [Case B] 로그인 후 저장 -> 토스트 띄우고 메인으로 이동
-        setToastMessage("저장이 완료되었습니다!");
+        setIsFullLoading(false); // 화면 로딩 끝
+        setToastMessage("소중한 기록이 저장되었어요!");
         setIsToastVisible(true);
-
-        // 1.5초 뒤 메인으로 이동 (토스트 보여줄 시간 확보)
-        setTimeout(() => {
-          router.push("/main");
-        }, 1500);
+        setTimeout(() => router.push("/main"), 1500);
       }
     } catch (e) {
       console.error(e);
@@ -178,6 +181,9 @@ export default function CameraPage() {
 
   // 6. 로그인 성공 핸들러
   const handleLoginSuccess = async (credentialResponse: any) => {
+    setIsFullLoading(true); // 화면 덮기
+    setIsLoginModalOpen(false);
+
     const googleToken = credentialResponse.credential;
     try {
       const response = await fetch(
@@ -194,10 +200,7 @@ export default function CameraPage() {
       // 1. 앱 로그인 상태 업데이트
       login(data.access_token);
 
-      // 2. ⭐️ 로그인 모달을 '먼저' 확실하게 닫음
-      setIsLoginModalOpen(false);
-
-      // 3. 분석 결과가 있으면 저장 진행
+      // 2. 분석 결과가 있으면 저장 진행
       if (analyzedResult) {
         // 약간의 텀을 주어 모달이 닫힌 후 저장이 시작되는 느낌을 줌 (선택사항이나 UX상 좋음)
         await saveAndRedirect(
@@ -234,6 +237,10 @@ export default function CameraPage() {
 
   return (
     <main className="flex min-h-screen flex-col items-center bg-app-bg pb-16">
+      {/* ⭐️ 풀스크린 로더 (가장 최상위 z-index) */}
+      {isFullLoading && <FullScreenLoader />}
+
+      {/* 1. 입력 화면 (카메라/업로드) */}
       {!tempImage && (
         <div className="w-full max-w-md">
           <WebCamera onCapture={handleCapture} />
@@ -242,6 +249,7 @@ export default function CameraPage() {
         </div>
       )}
 
+      {/* 2. 분석 및 결과 화면 */}
       {tempImage && (
         <div className="w-full max-w-md">
           <FaceMeshProcessor
@@ -257,13 +265,8 @@ export default function CameraPage() {
           />
         </div>
       )}
-      <Toast
-        message={toastMessage}
-        isVisible={isToastVisible}
-        onClose={() => setIsToastVisible(false)}
-      />
 
-      {/* 👇 1. 로그인 유도 모달 (GoogleLogin 핸들러 연결) */}
+      {/* 3. 로그인 유도 모달 */}
       {isLoginModalOpen && (
         <LoginRequestModal
           onClose={() => setIsLoginModalOpen(false)}
@@ -273,10 +276,17 @@ export default function CameraPage() {
         />
       )}
 
-      {/* 👇 2. 저장 완료 모달 */}
+      {/* 4. 저장 완료 모달 (기존 회원용) */}
       {isSaveSuccess && (
         <SaveSuccessModal onClose={() => router.push("/main")} />
       )}
+
+      {/* 5. 토스트 메시지 (신규 로그인 후 저장용) */}
+      <Toast
+        message={toastMessage}
+        isVisible={isToastVisible}
+        onClose={() => setIsToastVisible(false)}
+      />
     </main>
   );
 }
