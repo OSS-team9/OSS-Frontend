@@ -77,6 +77,12 @@ export default function PhotoGuideModal({
               을 골라주세요.
             </li>
             <li>
+              세로로 긴 사진은{" "}
+              <span className="text-red-500">
+                위아래가 잘려서 얼굴이 확대될 수 있어요.
+              </span>
+            </li>
+            <li>
               얼굴이 너무 꽉 차면{" "}
               <span className="text-red-500">
                 감정 스티커가 가려질 수 있어요.
