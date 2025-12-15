@@ -115,7 +115,7 @@ function MainPage() {
         <DailyResult data={todayData} />
       </section>
       <InstallBanner />
-      <section className="mobile-container px-4">
+      <section className="mobile-container px-4 my-4">
         {/* ⭐️ 감정 기록 (데이터 전달) */}
         <EmotionHistory logs={logs} />
       </section>
