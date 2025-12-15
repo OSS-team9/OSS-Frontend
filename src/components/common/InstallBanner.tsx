@@ -27,19 +27,9 @@ export default function InstallBanner() {
     const isIosDevice = /iphone|ipad|ipod/.test(userAgent);
     setIsIos(isIosDevice);
 
-    // 3. iOS 처리: iOS는 이벤트가 없으므로 조건 맞으면 즉시 노출
-    if (isIosDevice && !isStandalone) {
-      setIsVisible(true);
-    }
+    setIsVisible(true);
 
-    // 4. 안드로이드/PC 처리: Context에 이벤트가 들어와 있다면 배너 노출
-    // (PWAContext가 이미 이벤트를 잡고 있으므로, 여기선 확인만 하면 됩니다)
-    if (deferredPrompt) {
-      console.log("📦 [Banner] 저장된 이벤트 발견! 배너 띄움");
-      setIsVisible(true);
-    }
-
-    // 5. 설치 완료 이벤트 감지 (추가 안전장치)
+    // 4. 설치 완료 이벤트 감지 (추가 안전장치)
     const handleAppInstalled = () => {
       console.log("앱 설치 완료!");
       setDeferredPrompt(null);
@@ -63,17 +53,18 @@ export default function InstallBanner() {
     }
 
     // 안드로이드/PC 설치 프롬프트
-    if (!deferredPrompt) return;
-
-    // 저장된 이벤트를 실행
-    deferredPrompt.prompt();
-
-    const { outcome } = await deferredPrompt.userChoice;
-
-    // 설치 수락 시 처리
-    if (outcome === "accepted") {
-      setDeferredPrompt(null); // Context 비우기
-      setIsVisible(false);
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === "accepted") {
+        setDeferredPrompt(null);
+        setIsVisible(false);
+      }
+    } else {
+      // ⭐️ 티켓이 없으면(쿨다운 or 이미 설치됨) -> 안내 메시지 띄움
+      alert(
+        "브라우저 우측 상단 메뉴(⋮)에서 \n[앱 설치] 또는 [홈 화면에 추가]를 눌러주세요!"
+      );
     }
   };
 
