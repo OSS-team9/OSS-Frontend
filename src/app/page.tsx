@@ -59,7 +59,7 @@ export default function LandingPage() {
         </p>
       </div>
 
-      <div className="mobile-container bg-white/80 backdrop-blur-sm p-8 rounded-[2.5rem] shadow-xl border-4 border-white">
+      <div className="w-full max-w-sm bg-white/80 backdrop-blur-sm px-4 py-8 rounded-[2.5rem] shadow-xl border-4 border-white">
         <div className="flex flex-col gap-4">
           <div className="flex justify-center w-full shrink-0">
             <GoogleLogin
