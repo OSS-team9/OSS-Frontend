@@ -47,7 +47,7 @@ export default function LoginRequestModal({
         {/* ⭐️ 버튼 그룹: 원래 동작(구글 로그인) 복구 */}
         <div className="flex flex-col items-center gap-3 w-full">
           {/* 구글 로그인 버튼 */}
-          <div className="w-full flex justify-center">
+          <div className="w-full flex justify-center shrink-0">
             <GoogleLogin
               onSuccess={onLoginSuccess}
               onError={onLoginError}
