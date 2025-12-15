@@ -1,11 +1,18 @@
 "use client";
 
+import { useState } from "react";
+import { IoInformationCircleOutline } from "react-icons/io5";
+import PhotoGuideModal from "@/components/common/PhotoGuideModal";
+
 // WebCamera와 '똑같은' props 규격을 사용합니다.
 interface PhotoUploaderProps {
   onCapture: (imageSrc: string) => void;
 }
 
 export default function PhotoUploader({ onCapture }: PhotoUploaderProps) {
+  // 모달 상태 관리 (여기서 직접 관리)
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
+
   // 파일이 선택되었을 때 실행될 함수
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -43,6 +50,19 @@ export default function PhotoUploader({ onCapture }: PhotoUploaderProps) {
         accept="image/*"
         onChange={handleFileChange}
         className="hidden"
+      />
+      <button
+        onClick={() => setIsGuideOpen(true)}
+        className="mt-4 mx-auto flex items-center gap-1.5 text-white/70 text-xs font-medium hover:text-white hover:underline underline-offset-4 decoration-white/50 transition-all"
+      >
+        <IoInformationCircleOutline size={16} />{" "}
+        {/* 아이콘은 기본이 제일 깔끔 */}
+        <span>어떤 사진이 인식이 잘 될까요?</span>
+      </button>
+      {/* 4. 모달 컴포넌트 렌더링 */}
+      <PhotoGuideModal
+        isOpen={isGuideOpen}
+        onClose={() => setIsGuideOpen(false)}
       />
     </div>
   );

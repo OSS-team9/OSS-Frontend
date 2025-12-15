@@ -3,15 +3,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "@/components/auth/AuthContext";
-import { IoClose } from "react-icons/io5";
 import { toKoreanEmotion } from "@/utils/emotionUtils";
 import { dataURLtoFile } from "@/utils/fileUtils";
 
 import WebCamera from "@/components/camera/WebCamera";
 import PhotoUploader from "@/components/camera/PhotoUploader";
-// import FaceMeshProcessor from "@/components/camera/FaceMeshProcessor";
 import { useEmotion } from "@/components/auth/EmotionContext";
 import SaveSuccessModal from "@/components/camera/SaveSuccessModal";
 import LoginRequestModal from "@/components/auth/LoginRequestModal";
