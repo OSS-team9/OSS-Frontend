@@ -111,17 +111,13 @@ function MainPage() {
   return (
     <div className="min-h-screen bg-app-bg">
       {/* 상단 (진한 갈색 영역 + DailyResult) */}
-      <section className="bg-app-bg-tertiary">
-        <div className="mobile-container">
-          <DailyResult data={todayData} />
-        </div>
+      <section className="mobile-container bg-app-bg-tertiary">
+        <DailyResult data={todayData} />
       </section>
       <InstallBanner />
-      <section className="px-4 py-3">
-        <div className="mobile-container">
-          {/* ⭐️ 감정 기록 (데이터 전달) */}
-          <EmotionHistory logs={logs} />
-        </div>
+      <section className="mobile-container px-4">
+        {/* ⭐️ 감정 기록 (데이터 전달) */}
+        <EmotionHistory logs={logs} />
       </section>
     </div>
   );
