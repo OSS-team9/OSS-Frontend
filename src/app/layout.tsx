@@ -6,6 +6,7 @@ import "./globals.css";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { AuthProvider } from "@/components/auth/AuthContext";
 import { EmotionProvider } from "@/components/auth/EmotionContext";
+import { PWAProvider } from "@/context/PWAContext";
 
 import ClientLayout from "@/components/layout/ClientLayout";
 
@@ -75,7 +76,9 @@ export default function RootLayout({
         <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
           <AuthProvider>
             <EmotionProvider>
-              <ClientLayout>{children}</ClientLayout>
+              <PWAProvider>
+                <ClientLayout>{children}</ClientLayout>
+              </PWAProvider>
             </EmotionProvider>
           </AuthProvider>
         </GoogleOAuthProvider>

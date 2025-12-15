@@ -1,22 +1,22 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePWA } from "@/context/PWAContext"; // ⭐️ Context 훅 사용
 import { IoPhonePortraitOutline, IoChevronForward } from "react-icons/io5";
 
 export default function InstallBanner() {
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  // ⭐️ Context에서 전역으로 관리되는 이벤트 가져오기
+  const { deferredPrompt, setDeferredPrompt } = usePWA();
+
   const [isVisible, setIsVisible] = useState(false);
   const [isIos, setIsIos] = useState(false);
 
   useEffect(() => {
-    // 1. 앱으로 실행 중인지 확인 (가장 중요!)
-    // window.matchMedia: 안드로이드/PC 표준
-    // navigator.standalone: iOS 표준 (legacy)
+    // 1. 현재 앱으로 실행 중인지 확인
     const isStandalone =
       window.matchMedia("(display-mode: standalone)").matches ||
       (window.navigator as any).standalone;
 
-    // 앱으로 실행 중이라면 절대 배너를 띄우지 않고 로직 종료
     if (isStandalone) {
       setIsVisible(false);
       return;
@@ -27,37 +27,31 @@ export default function InstallBanner() {
     const isIosDevice = /iphone|ipad|ipod/.test(userAgent);
     setIsIos(isIosDevice);
 
-    // 3. 설치 이벤트 감지 (안드로이드/PC)
-    const handleBeforeInstallPrompt = (e: any) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      // 브라우저가 "설치 가능해!"라고 신호를 줄 때만 보여줌
-      setIsVisible(true);
-    };
-
-    // 4. 설치 완료 이벤트 감지 (설치하자마자 배너 사라지게)
-    const handleAppInstalled = () => {
-      console.log("앱 설치 완료!");
-      setDeferredPrompt(null);
-      setIsVisible(false); // 즉시 숨김
-    };
-
-    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-    window.addEventListener("appinstalled", handleAppInstalled);
-
-    // iOS는 beforeinstallprompt가 없으므로 수동으로 표시 (앱 모드가 아닐 때만)
+    // 3. iOS 처리: iOS는 이벤트가 없으므로 조건 맞으면 즉시 노출
     if (isIosDevice && !isStandalone) {
       setIsVisible(true);
     }
 
+    // 4. 안드로이드/PC 처리: Context에 이벤트가 들어와 있다면 배너 노출
+    // (PWAContext가 이미 이벤트를 잡고 있으므로, 여기선 확인만 하면 됩니다)
+    if (deferredPrompt) {
+      console.log("📦 [Banner] 저장된 이벤트 발견! 배너 띄움");
+      setIsVisible(true);
+    }
+
+    // 5. 설치 완료 이벤트 감지 (추가 안전장치)
+    const handleAppInstalled = () => {
+      console.log("앱 설치 완료!");
+      setDeferredPrompt(null);
+      setIsVisible(false);
+    };
+
+    window.addEventListener("appinstalled", handleAppInstalled);
+
     return () => {
-      window.removeEventListener(
-        "beforeinstallprompt",
-        handleBeforeInstallPrompt
-      );
       window.removeEventListener("appinstalled", handleAppInstalled);
     };
-  }, []);
+  }, [deferredPrompt]); // deferredPrompt가 업데이트되면 실행됨
 
   const handleInstallClick = async () => {
     // iOS 가이드
@@ -68,20 +62,21 @@ export default function InstallBanner() {
       return;
     }
 
-    // 안드로이드 설치 프롬프트
+    // 안드로이드/PC 설치 프롬프트
     if (!deferredPrompt) return;
 
+    // 저장된 이벤트를 실행
     deferredPrompt.prompt();
 
     const { outcome } = await deferredPrompt.userChoice;
-    // (여기서도 처리하지만, appinstalled 이벤트가 더 확실함)
+
+    // 설치 수락 시 처리
     if (outcome === "accepted") {
-      setDeferredPrompt(null);
+      setDeferredPrompt(null); // Context 비우기
       setIsVisible(false);
     }
   };
 
-  // 렌더링 X 조건
   if (!isVisible) return null;
 
   return (
