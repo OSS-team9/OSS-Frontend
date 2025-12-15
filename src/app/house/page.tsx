@@ -251,100 +251,102 @@ function HousePage() {
   };
 
   return (
-    <div className="min-h-screen bg-app-bg pt-6 px-4">
-      <canvas ref={canvasRef} className="hidden" />
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center">
-          <h1 className="text-xl font-bold text-black font-lotte pt-1">
-            무드 라운지
-          </h1>
+    <div className="min-h-screen bg-app-bg pt-6 px-6 ">
+      <div className="mobile-container">
+        <canvas ref={canvasRef} className="hidden" />
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center">
+            <h1 className="text-xl font-bold text-black font-lotte pt-1">
+              무드 라운지
+            </h1>
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={handleSaveRoom}
+              disabled={isSaving}
+              className={`p-2 rounded-full transition ${
+                placedEmotion
+                  ? "text-app-bg-secondary bg-[#F5EFE6] hover:bg-amber-200" // 따뜻한 갈색/노란색 조합
+                  : "text-gray-300 bg-gray-50" // 비활성화 상태도 조금 더 부드럽게
+              }`}
+              title="저장하기"
+            >
+              {isSaving ? (
+                <span className="animate-spin text-lg">⏳</span>
+              ) : (
+                <IoSaveOutline size={24} />
+              )}
+            </button>
+            {/* ⭐️ 공유 버튼 (페이지 내부로 이동됨) */}
+            <button
+              onClick={handleShareRoom}
+              disabled={isSaving}
+              className="p-2 text-black/70 hover:text-black rounded-full hover:bg-black/5 transition"
+              title="공유하기"
+            >
+              <IoShareSocialOutline size={24} />
+            </button>
+          </div>
         </div>
 
-        <div className="flex gap-2">
-          <button
-            onClick={handleSaveRoom}
-            disabled={isSaving}
-            className={`p-2 rounded-full transition ${
-              placedEmotion
-                ? "text-app-bg-secondary bg-[#F5EFE6] hover:bg-amber-200" // 따뜻한 갈색/노란색 조합
-                : "text-gray-300 bg-gray-50" // 비활성화 상태도 조금 더 부드럽게
-            }`}
-            title="저장하기"
-          >
-            {isSaving ? (
-              <span className="animate-spin text-lg">⏳</span>
-            ) : (
-              <IoSaveOutline size={24} />
+        <BorderCard className="p-0 w-full max-w-md mx-auto border-10">
+          <div className="relative w-full aspect-1/2 bg-gray-200 overflow-hidden">
+            {isLoading && (
+              <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/50 backdrop-blur-sm">
+                <LoadingSpinner />
+              </div>
             )}
-          </button>
-          {/* ⭐️ 공유 버튼 (페이지 내부로 이동됨) */}
-          <button
-            onClick={handleShareRoom}
-            disabled={isSaving}
-            className="p-2 text-black/70 hover:text-black rounded-full hover:bg-black/5 transition"
-            title="공유하기"
-          >
-            <IoShareSocialOutline size={24} />
-          </button>
-        </div>
+            <Image
+              src={ROOM_BASE_IMAGE}
+              alt="Room Base"
+              fill
+              className="object-cover"
+              priority
+            />
+
+            {/* 2. 수집된 감정 장식들 (레이어드) */}
+            {collectedEmotions &&
+              Array.from(new Set(collectedEmotions.map((e) => e.emotion))).map(
+                (emotionType) => {
+                  const decorationSrc = ROOM_DECORATIONS[emotionType];
+                  if (!decorationSrc) return null;
+                  return (
+                    <div
+                      key={emotionType}
+                      className="absolute inset-0 z-1 pointer-events-none"
+                    >
+                      <Image
+                        src={decorationSrc}
+                        alt="decoration"
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  );
+                }
+              )}
+
+            {/* 2. ⭐️ 배치된 스티커 (X 버튼 제거됨) */}
+            {placedEmotion && (
+              <div className="absolute bottom-[5%] left-1/2 -translate-x-1/2 w-60 h-60 animate-bounce-slow z-10">
+                <Image
+                  src={`/images/emotions/${placedEmotion.emotion}_${placedEmotion.level}.png`}
+                  alt="Placed Sticker"
+                  fill
+                  className="object-contain drop-shadow-xl filter brightness-110"
+                />
+              </div>
+            )}
+          </div>
+        </BorderCard>
+
+        {/* 3. ⭐️ 선택된 감정(placedEmotion)을 props로 전달 */}
+        <EmotionStickerBoard
+          onSelectSticker={handleSelectSticker}
+          selectedEmotion={placedEmotion}
+        />
       </div>
-
-      <BorderCard className="p-0 w-full max-w-md mx-auto border-10">
-        <div className="relative w-full aspect-1/2 bg-gray-200 overflow-hidden">
-          {isLoading && (
-            <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/50 backdrop-blur-sm">
-              <LoadingSpinner />
-            </div>
-          )}
-          <Image
-            src={ROOM_BASE_IMAGE}
-            alt="Room Base"
-            fill
-            className="object-cover"
-            priority
-          />
-
-          {/* 2. 수집된 감정 장식들 (레이어드) */}
-          {collectedEmotions &&
-            Array.from(new Set(collectedEmotions.map((e) => e.emotion))).map(
-              (emotionType) => {
-                const decorationSrc = ROOM_DECORATIONS[emotionType];
-                if (!decorationSrc) return null;
-                return (
-                  <div
-                    key={emotionType}
-                    className="absolute inset-0 z-1 pointer-events-none"
-                  >
-                    <Image
-                      src={decorationSrc}
-                      alt="decoration"
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                );
-              }
-            )}
-
-          {/* 2. ⭐️ 배치된 스티커 (X 버튼 제거됨) */}
-          {placedEmotion && (
-            <div className="absolute bottom-[5%] left-1/2 -translate-x-1/2 w-60 h-60 animate-bounce-slow z-10">
-              <Image
-                src={`/images/emotions/${placedEmotion.emotion}_${placedEmotion.level}.png`}
-                alt="Placed Sticker"
-                fill
-                className="object-contain drop-shadow-xl filter brightness-110"
-              />
-            </div>
-          )}
-        </div>
-      </BorderCard>
-
-      {/* 3. ⭐️ 선택된 감정(placedEmotion)을 props로 전달 */}
-      <EmotionStickerBoard
-        onSelectSticker={handleSelectSticker}
-        selectedEmotion={placedEmotion}
-      />
     </div>
   );
 }
