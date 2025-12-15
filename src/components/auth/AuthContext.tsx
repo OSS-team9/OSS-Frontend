@@ -60,7 +60,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } as HeadersInit;
 
     // 2. 요청 실행
-    const response = await fetch(url, { ...options, headers });
+    const response = await fetch(url, {
+      ...options,
+      headers,
+      cache: "no-store",
+    });
 
     // 3. ⭐️ 401(만료) 체크: 여기서 전역적으로 가로챕니다!
     if (response.status === 401) {
