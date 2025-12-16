@@ -2,6 +2,7 @@
 
 import { IoPersonCircleOutline, IoClose } from "react-icons/io5";
 import GoogleLoginBtn from "@/components/auth/GoogleLoginBtn";
+import { useState, useEffect } from "react";
 
 interface LoginRequestModalProps {
   onClose: () => void;
@@ -16,6 +17,11 @@ export default function LoginRequestModal({
   onLoginError,
   onGoHome,
 }: LoginRequestModalProps) {
+  const [resetKey, setResetKey] = useState(0);
+  useEffect(() => {
+    // 모달이 마운트될 때 (isOpen일 때) 이 코드가 실행됩니다.
+    setResetKey((prev) => prev + 1);
+  }, []); // 의존성 배열을 비워두거나 isOpen 상태를 넣습니다. (여기서는 모달이 마운트될 때만 실행되도록)
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
       <div className="bg-white w-full max-w-xs rounded-[2rem] p-6 text-center shadow-2xl relative overflow-hidden border-2 border-white">
@@ -45,8 +51,7 @@ export default function LoginRequestModal({
         </p>
 
         {/* ⭐️ 버튼 그룹: 원래 동작(구글 로그인) 복구 */}
-        <div className="flex flex-col items-center gap-3 w-full">
-          {/* 구글 로그인 버튼 */}
+        <div key={resetKey} className="flex flex-col items-center gap-3 w-full">
           <div className="w-full flex justify-center shrink-0">
             <GoogleLoginBtn
               onSuccess={onLoginSuccess}

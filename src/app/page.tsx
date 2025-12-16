@@ -1,7 +1,7 @@
 // src/app/page.tsx
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthContext";
 import GoogleLoginBtn from "@/components/auth/GoogleLoginBtn";
@@ -9,9 +9,11 @@ import GoogleLoginBtn from "@/components/auth/GoogleLoginBtn";
 export default function LandingPage() {
   const { token, login } = useAuth();
   const router = useRouter();
+  const [buttonKey, setButtonKey] = useState(0);
 
   // 1. ⭐️ 이미 로그인했으면 메인으로 자동 이동
   useEffect(() => {
+    setButtonKey((prev) => prev + 1);
     if (token) {
       router.replace("/main");
     }
@@ -61,7 +63,7 @@ export default function LandingPage() {
 
       <div className="w-full max-w-sm bg-white/80 backdrop-blur-sm p-8 rounded-[2.5rem] shadow-xl border-4 border-white">
         <div className="flex flex-col gap-4">
-          <div className="flex justify-center w-full">
+          <div key={buttonKey} className="flex justify-center w-full">
             <GoogleLoginBtn
               onSuccess={handleLoginSuccess}
               onError={() => alert("로그인 실패")}
