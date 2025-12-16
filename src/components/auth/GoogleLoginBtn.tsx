@@ -1,9 +1,11 @@
+// src/components/auth/GoogleLoginBtn.tsx
 "use client";
 
 import { GoogleLogin } from "@react-oauth/google";
+import { useEffect, useState } from "react";
 
 interface GoogleLoginBtnProps {
-  onSuccess: (credentialResponse: any) => void; // 타입 변경 (tokenResponse -> credentialResponse)
+  onSuccess: (credentialResponse: any) => void;
   onError?: () => void;
   text?: string;
   className?: string;
@@ -15,11 +17,45 @@ export default function GoogleLoginBtn({
   text = "Google 계정으로 계속하기",
   className = "",
 }: GoogleLoginBtnProps) {
+  // ⭐️ [추가] OS 판별 상태 (Android일 경우 true)
+  const [isAndroid, setIsAndroid] = useState(false);
+
+  useEffect(() => {
+    // 클라이언트 측에서만 실행
+    // User Agent 문자열에 'Android'가 포함되어 있는지 확인
+    const isAndroidDevice = /Android/i.test(navigator.userAgent);
+    setIsAndroid(isAndroidDevice);
+  }, []);
+
+  // ----------------------------------------------------
+  // ⭐️ 1. Android일 경우: 공식 버튼 렌더링 (안정성 확보)
+  // ----------------------------------------------------
+  if (isAndroid) {
+    return (
+      <div className={`w-full flex justify-center max-w-[320px] ${className}`}>
+        <GoogleLogin
+          onSuccess={onSuccess}
+          onError={onError}
+          theme="filled_black" // 깔끔한 검정 테마
+          shape="pill"
+          text="signin_with"
+          width="320" // 너비를 꽉 채워서 보여줍니다.
+          // Android에서 공식 버튼이 안정적으로 작동하도록 설정
+          useOneTap={false}
+          ux_mode="popup"
+        />
+      </div>
+    );
+  }
+
+  // ----------------------------------------------------
+  // ⭐️ 2. iOS/PC일 경우: 커스텀 버튼 (디자인 유지 및 투명 오버레이)
+  // ----------------------------------------------------
   return (
-    // 1. 버튼 전체를 감싸는 상대 위치 컨테이너
+    // relative 컨테이너 (iOS/PC에서 사용)
     <div className={`relative w-full max-w-[320px] ${className}`}>
-      {/* 2. 🎨 예쁜 커스텀 디자인 (보여주기용 - 클릭 안 됨) */}
-      <div className="flex items-center justify-center w-full py-3.5 bg-[#1a1a1a] text-white font-bold rounded-full gap-3 pointer-events-none">
+      {/* 2. 🎨 커스텀 디자인 (보여주기용 - pointer-events-none으로 클릭 무시) */}
+      <div className="flex items-center justify-center w-full py-3.5 bg-[#1a1a1a] text-white font-bold rounded-full gap-3 shadow-md pointer-events-none">
         {/* 구글 로고 SVG */}
         <svg
           className="w-5 h-5 bg-white rounded-full p-0.5"
@@ -45,16 +81,16 @@ export default function GoogleLoginBtn({
         <span>{text}</span>
       </div>
 
-      {/* 3. 👻 실제 기능: 투명한 공식 버튼 (위로 덮어씌움) */}
+      {/* 3. 👻 투명 공식 버튼 (iOS/PC에서 클릭 이벤트를 받는 레이어) */}
       <div className="absolute inset-0 opacity-0 z-10 overflow-hidden rounded-full">
-        <div className="w-full h-full">
+        <div className="w-full h-full flex items-center justify-center">
           <GoogleLogin
             onSuccess={onSuccess}
-            onError={() => {
-              console.error("Login Failed");
-              if (onError) onError();
-            }}
+            onError={onError}
             size="large"
+            theme="filled_black"
+            shape="pill"
+            // width, text 속성 제거 (터치 영역 확보 위함)
             useOneTap={false}
             ux_mode="popup"
           />
