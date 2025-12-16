@@ -5,7 +5,7 @@ import Link from "next/link";
 import { IoShareSocialOutline, IoAdd, IoCameraOutline } from "react-icons/io5";
 import { getFormattedDate } from "@/utils/dateUtils";
 import { EmotionLog } from "@/types";
-import Card from "@/components/common/BorderCard";
+import BorderCard from "@/components/common/BorderCard";
 import { useShareAndDownload } from "@/hooks/useShareAndDownload";
 
 interface DailyResultProps {
@@ -49,10 +49,10 @@ export default function DailyResult({ data }: DailyResultProps) {
 
       <div className="flex gap-5 h-64">
         {/* 왼쪽: 내 사진 (서버 URL) */}
-        <Card className="flex-1.8 bg-[#FFF8E7] relative">
+        <BorderCard className="flex-[1.4] bg-[#FFF8E7] relative overflow-hidden flex items-center justify-center aspect-[3/4]">
           {data?.imageUrl ? (
             // (A) 데이터 있음: 내 사진 표시
-            <div className="w-full h-full relative aspect-3/4">
+            <div className="w-full h-full relative">
               <Image
                 src={data.imageUrl}
                 alt="내 사진"
@@ -62,7 +62,7 @@ export default function DailyResult({ data }: DailyResultProps) {
             </div>
           ) : (
             // (B) ⭐️ 데이터 없음: 기록 유도 UI (점선 테두리 효과)
-            <div className="w-full h-full p-2 aspect-3/4">
+            <div className="w-full h-full p-2">
               <div className="w-full h-full border-2 border-dashed border-[#8b7e66] rounded-2xl flex flex-col items-center justify-center relative">
                 {/* 카메라 아이콘 */}
                 <IoCameraOutline className="w-12 h-12 text-[#8b4513] mb-2" />
@@ -82,12 +82,12 @@ export default function DailyResult({ data }: DailyResultProps) {
           >
             <IoAdd className="w-6 h-6 text-white" />
           </Link>
-        </Card>
+        </BorderCard>
 
         {/* 오른쪽: 캐릭터 + 공유 버튼 */}
         <div className="flex-1 flex flex-col gap-5">
           {/* 캐릭터 이미지 */}
-          <Card className="flex-1 relative bg-gray-200">
+          <BorderCard className="flex-1 relative bg-gray-200">
             {/* 배경 이미지 (항상 보임) */}
             <Image
               src="/images/mood_room.png"
@@ -106,7 +106,7 @@ export default function DailyResult({ data }: DailyResultProps) {
                 className="object-contain drop-shadow-md"
               />
             </div>
-          </Card>
+          </BorderCard>
 
           {/* 공유 버튼 */}
           <button
