@@ -243,7 +243,9 @@ export default function FaceMeshProcessor({
         const session = await ort.InferenceSession.create(
           "/models/mlp_v2.onnx",
           {
-            executionProviders: isIOS ? ["wasm"] : ["webgpu", "webgl", "wasm"],
+            executionProviders: isIOS
+              ? ["webgl", "wasm"]
+              : ["webgpu", "webgl", "wasm"],
           }
         );
         setEmotionSession(session);
