@@ -6,6 +6,7 @@ import * as ort from "onnxruntime-web"; // ONNX Runtime 추가
 import Card from "@/components/common/BorderCard";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { useShareAndDownload } from "@/hooks/useShareAndDownload";
+import { getTodayDateString } from "@/utils/dateUtils";
 
 // ==================================================
 // 감정 라벨
@@ -354,6 +355,7 @@ export default function FaceMeshProcessor({
   // 공유하기 핸들러
   const handleShare = async () => {
     if (!canvasRef.current || !isDrawingComplete) return;
+    const dateStr = getTodayDateString();
     try {
       const canvas = canvasRef.current;
       const blob = await new Promise<Blob | null>((resolve) =>
@@ -361,7 +363,8 @@ export default function FaceMeshProcessor({
       );
       if (!blob) return alert("이미지 생성 실패");
 
-      const file = new File([blob], "today-haru_result.png", {
+      const filename = `today-haru_${dateStr}.png`;
+      const file = new File([blob], filename, {
         type: "image/png",
       });
 
@@ -381,8 +384,9 @@ export default function FaceMeshProcessor({
 
   const handleDownload = () => {
     if (!canvasRef.current) return;
+    const dateStr = getTodayDateString();
     const url = canvasRef.current.toDataURL("image/png");
-    downloadImage(url, "today-haru.png");
+    downloadImage(url, `today-haru_${dateStr}.png`);
   };
 
   return (
