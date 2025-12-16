@@ -1,7 +1,7 @@
 "use client";
 
 import { IoPersonCircleOutline, IoClose } from "react-icons/io5";
-import { GoogleLogin } from "@react-oauth/google";
+import GoogleLoginBtn from "@/components/auth/GoogleLoginBtn";
 
 interface LoginRequestModalProps {
   onClose: () => void;
@@ -48,13 +48,10 @@ export default function LoginRequestModal({
         <div className="flex flex-col items-center gap-3 w-full">
           {/* 구글 로그인 버튼 */}
           <div className="w-full flex justify-center shrink-0">
-            <GoogleLogin
+            <GoogleLoginBtn
               onSuccess={onLoginSuccess}
               onError={onLoginError}
-              theme="filled_black"
-              shape="pill"
-              text="signin_with"
-              width="240"
+              text="Google 계정으로 로그인"
             />
           </div>
 
