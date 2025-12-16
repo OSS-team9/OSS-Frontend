@@ -19,7 +19,7 @@ export default function GoogleLoginBtn({
     // 1. 버튼 전체를 감싸는 상대 위치 컨테이너
     <div className={`relative w-full max-w-[320px] ${className}`}>
       {/* 2. 🎨 예쁜 커스텀 디자인 (보여주기용 - 클릭 안 됨) */}
-      <div className="flex items-center justify-center w-full py-3.5 bg-[#1a1a1a] text-white font-bold rounded-full gap-3">
+      <div className="flex items-center justify-center w-full py-3.5 bg-[#1a1a1a] text-white font-bold rounded-full gap-3 pointer-events-none">
         {/* 구글 로고 SVG */}
         <svg
           className="w-5 h-5 bg-white rounded-full p-0.5"
