@@ -245,7 +245,7 @@ export default function FaceMeshProcessor({
       return;
 
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
     setIsDrawingComplete(false);
@@ -291,8 +291,27 @@ export default function FaceMeshProcessor({
         canvas.height
       );
 
-      // (2) FaceMesh 감지
-      const result = faceLandmarker.detect(userImage);
+      // =========================================================
+      // 🚀 [수정 3] AI 분석용 '작은 캔버스' 생성 (iOS 렉 해결의 핵심)
+      // =========================================================
+      const ANALYSIS_WIDTH = 512; // 512px로 축소
+      const analysisScale = ANALYSIS_WIDTH / userImage.naturalWidth;
+      const analysisHeight = userImage.naturalHeight * analysisScale;
+
+      const smallCanvas = document.createElement("canvas");
+      smallCanvas.width = ANALYSIS_WIDTH;
+      smallCanvas.height = analysisHeight;
+      const smallCtx = smallCanvas.getContext("2d", {
+        willReadFrequently: true,
+      });
+
+      // 이미지를 작게 그려서 메모리에 올림
+      smallCtx?.drawImage(userImage, 0, 0, ANALYSIS_WIDTH, analysisHeight);
+
+      // (2) FaceMesh 감지 : 원본(userImage) 대신 👉 작게 줄인(smallCanvas)를 넣습니다.
+      const result = faceLandmarker.detect(smallCanvas);
+      // =========================================================
+
       if (!result.faceLandmarks.length) {
         setDetectionFailed(true);
         setIsDrawingComplete(true);
