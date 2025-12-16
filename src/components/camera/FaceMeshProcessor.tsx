@@ -184,6 +184,18 @@ export default function FaceMeshProcessor({
   const [detectionFailed, setDetectionFailed] = useState(false);
   const [isDrawingComplete, setIsDrawingComplete] = useState(false);
 
+  // 🔍 [디버깅용] 로그 상태 추가
+  const [debugLog, setDebugLog] = useState<string[]>([]);
+
+  // 🔍 [디버깅용] 로그 추가 함수
+  const addLog = (msg: string) => {
+    console.log(msg); // 콘솔에도 찍고
+    setDebugLog((prev) => [
+      ...prev,
+      `${new Date().toLocaleTimeString()} : ${msg}`,
+    ]); // 화면에도 찍음
+  };
+
   const isRunningRef = useRef(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -195,20 +207,28 @@ export default function FaceMeshProcessor({
   useEffect(() => {
     async function loadAll() {
       try {
-        // (1) OS 감지: 아이폰/아이패드인지 확인
+        // 🚀 [최적화] 아이폰/아이패드 감지
         const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-        // Scaler 로드
+        addLog(
+          `📱 기기 감지: ${isIOS ? "iOS (아이폰/아이패드)" : "PC/Android"}`
+        );
+        addLog(
+          `⚡ 모드 설정: ${isIOS ? "CPU 모드 (안전)" : "GPU 모드 (고성능)"}`
+        );
+
         const res = await fetch("/models/mlp_v2_scaler.json");
         const raw = await res.json();
         setScaler({
           mean: raw.mean_ || raw.mean,
           scale: raw.scale_ || raw.scale,
         });
+        addLog("✅ Scaler 로드 완료");
 
-        // FaceLandmarker 로드
         const resolver = await FilesetResolver.forVisionTasks(
           "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
         );
+
+        // 🚀 [최적화] iOS는 CPU, 나머지는 GPU 사용
         const lm = await FaceLandmarker.createFromOptions(resolver, {
           baseOptions: {
             modelAssetPath: "/models/face_landmarker.task",
@@ -217,21 +237,20 @@ export default function FaceMeshProcessor({
           runningMode: "IMAGE",
         });
         setFaceLandmarker(lm);
+        addLog("✅ FaceLandmarker 로드 완료");
 
-        // ONNX Session 로드
+        // 🚀 [최적화] iOS는 wasm, 나머지는 webgpu 우선
         const session = await ort.InferenceSession.create(
           "/models/mlp_v2.onnx",
           {
-            executionProviders: isIOS
-              ? ["wasm"] // iOS: CPU만 사용
-              : ["webgpu", "webgl", "wasm"], // 그 외: GPU 우선, 안되면 CPU
+            executionProviders: isIOS ? ["wasm"] : ["webgpu", "webgl", "wasm"],
           }
         );
         setEmotionSession(session);
-
-        console.log("모든 AI 모델 로드 완료");
+        addLog("✅ ONNX Session 로드 완료");
       } catch (e) {
         console.error("모델 로딩 실패:", e);
+        addLog(`🚨 모델 로딩 실패: ${e}`);
       }
     }
     loadAll();
@@ -260,6 +279,8 @@ export default function FaceMeshProcessor({
     userImage.crossOrigin = "anonymous";
 
     userImage.onload = async () => {
+      addLog("🖼️ 이미지 로드됨. 그리기 시작...");
+
       // 캔버스 크기 고정 (User Logic 유지)
       const FIXED_WIDTH = 1440;
       const FIXED_HEIGHT = 1920;
@@ -294,84 +315,103 @@ export default function FaceMeshProcessor({
         canvas.width,
         canvas.height
       );
+      addLog("🖌️ 캔버스 그리기 완료");
 
       // =========================================================
       // 🚀 [수정 3] AI 분석용 '작은 캔버스' 생성 (iOS 렉 해결의 핵심)
       // =========================================================
-      const ANALYSIS_WIDTH = 512; // 512px로 축소
-      const analysisScale = ANALYSIS_WIDTH / userImage.naturalWidth;
-      const analysisHeight = userImage.naturalHeight * analysisScale;
+      // 🚀 [최적화] 메인 스레드 차단 방지를 위한 setTimeout
+      setTimeout(async () => {
+        try {
+          addLog("🤖 AI 분석 준비 중...");
 
-      const smallCanvas = document.createElement("canvas");
-      smallCanvas.width = ANALYSIS_WIDTH;
-      smallCanvas.height = analysisHeight;
-      const smallCtx = smallCanvas.getContext("2d", {
-        willReadFrequently: true,
-      });
+          // 🚀 [최적화] 분석용 이미지 축소 (512px)
+          const ANALYSIS_WIDTH = 512;
+          const analysisScale = ANALYSIS_WIDTH / userImage.naturalWidth;
+          const analysisHeight = userImage.naturalHeight * analysisScale;
 
-      // 이미지를 작게 그려서 메모리에 올림
-      smallCtx?.drawImage(userImage, 0, 0, ANALYSIS_WIDTH, analysisHeight);
+          const smallCanvas = document.createElement("canvas");
+          smallCanvas.width = ANALYSIS_WIDTH;
+          smallCanvas.height = analysisHeight;
+          const smallCtx = smallCanvas.getContext("2d", {
+            willReadFrequently: true,
+          });
 
-      // (2) FaceMesh 감지 : 원본(userImage) 대신 👉 작게 줄인(smallCanvas)를 넣습니다.
-      const result = faceLandmarker.detect(smallCanvas);
-      // =========================================================
+          smallCtx?.drawImage(userImage, 0, 0, ANALYSIS_WIDTH, analysisHeight);
+          addLog(`📉 분석용 이미지 축소 완료 (${ANALYSIS_WIDTH}px)`);
 
-      if (!result.faceLandmarks.length) {
-        setDetectionFailed(true);
-        setIsDrawingComplete(true);
-        return;
-      }
+          // (1) FaceMesh 감지
+          addLog("⏳ FaceLandmarker 감지 시작...");
+          const startFace = performance.now();
+          const result = faceLandmarker.detect(smallCanvas); // 작은 이미지 사용
+          const endFace = performance.now();
+          addLog(`✅ 얼굴 감지 완료! (${Math.round(endFace - startFace)}ms)`);
 
-      const lm = result.faceLandmarks[0];
+          if (!result.faceLandmarks.length) {
+            addLog("❌ 얼굴을 찾을 수 없음");
+            setDetectionFailed(true);
+            setIsDrawingComplete(true);
+            isRunningRef.current = false;
+            return;
+          }
 
-      if (isRunningRef.current) return;
+          const lm = result.faceLandmarks[0];
 
-      try {
-        isRunningRef.current = true;
+          // (2) ONNX 감정 분석
+          addLog("⏳ 감정 분석(ONNX) 시작...");
+          const startEmotion = performance.now();
 
-        // (3) ONNX 모델 추론 실행
-        const bbox = computeBBox(lm);
-        const vec = landmarksToVec1434_CropNorm(lm, bbox);
+          const bbox = computeBBox(lm);
+          const vec = landmarksToVec1434_CropNorm(lm, bbox);
+          const aiResult = await runEmotion(emotionSession, vec, scaler);
 
-        // 실제 AI 추론 (여기서 시간 걸림)
-        const aiResult = await runEmotion(emotionSession, vec, scaler);
-        console.log("AI 추론 결과:", aiResult);
+          const endEmotion = performance.now();
+          addLog(
+            `✅ 감정 분석 완료! (${Math.round(endEmotion - startEmotion)}ms)`
+          );
+          addLog(`👉 결과: ${aiResult.emotion} (Lv.${aiResult.level})`);
 
-        // (4) 아이콘 그리기
-        const iconToDraw = new Image();
-        iconToDraw.src = `/images/emotions/${aiResult.emotion}_${aiResult.level}.png`;
-        await new Promise((resolve) => (iconToDraw.onload = resolve));
+          // (3) 아이콘 그리기
+          const iconToDraw = new Image();
+          iconToDraw.src = `/images/emotions/${aiResult.emotion}_${aiResult.level}.png`;
+          await new Promise((resolve) => (iconToDraw.onload = resolve));
 
-        const scaledLandmarks = lm.map((landmark) => {
-          const originalX = landmark.x * userImage.naturalWidth;
-          const originalY = landmark.y * userImage.naturalHeight;
-          const canvasX = ((originalX - sx) / sWidth) * canvas.width;
-          const canvasY = ((originalY - sy) / sHeight) * canvas.height;
-          return {
-            x: canvasX / canvas.width,
-            y: canvasY / canvas.height,
-            z: landmark.z,
-          };
-        });
+          const scaledLandmarks = lm.map((landmark) => {
+            const originalX = landmark.x * userImage.naturalWidth;
+            const originalY = landmark.y * userImage.naturalHeight;
+            const canvasX = ((originalX - sx) / sWidth) * canvas.width;
+            const canvasY = ((originalY - sy) / sHeight) * canvas.height;
+            return {
+              x: canvasX / canvas.width,
+              y: canvasY / canvas.height,
+              z: landmark.z,
+            };
+          });
 
-        ICON_PLACEMENTS.forEach((placement) => {
-          const landmark = scaledLandmarks[placement.landmarkIndex];
-          const x = landmark.x * canvas.width + placement.offsetX;
-          const y = landmark.y * canvas.height + placement.offsetY;
-          ctx.drawImage(iconToDraw, x, y, placement.width, placement.height);
-        });
+          ICON_PLACEMENTS.forEach((placement) => {
+            const landmark = scaledLandmarks[placement.landmarkIndex];
+            const x = landmark.x * canvas.width + placement.offsetX;
+            const y = landmark.y * canvas.height + placement.offsetY;
+            ctx.drawImage(iconToDraw, x, y, placement.width, placement.height);
+          });
 
-        setIsDrawingComplete(true);
-        const finalImage = canvas.toDataURL("image/png");
+          setIsDrawingComplete(true);
 
-        if (onAnalysisComplete) {
-          onAnalysisComplete(aiResult.emotion, aiResult.level, finalImage);
+          // (4) 결과 이미지 생성
+          addLog("💾 결과 이미지 변환 중...");
+          const finalImage = canvas.toDataURL("image/png");
+          addLog("🎉 모든 과정 완료!");
+
+          if (onAnalysisComplete) {
+            onAnalysisComplete(aiResult.emotion, aiResult.level, finalImage);
+          }
+        } catch (error) {
+          console.error("AI 처리 중 오류 발생:", error);
+          addLog(`🚨 에러 발생: ${error}`);
+        } finally {
+          isRunningRef.current = false;
         }
-      } catch (error) {
-        console.error("AI 처리 중 오류 발생:", error);
-      } finally {
-        isRunningRef.current = false;
-      }
+      }, 50); // 0.05초 딜레이
     };
   }, [faceLandmarker, emotionSession, scaler, imageSrc]); // 의존성 배열 업데이트
 
@@ -478,6 +518,22 @@ export default function FaceMeshProcessor({
           </div>
         </div>
       )}
+      {/* 🔍 [디버깅용 로그 UI] 
+        - 테스트가 끝나면 이 아래 div 부분만 지우시면 됩니다!
+      */}
+      <div className="fixed bottom-0 left-0 w-full bg-black/90 text-green-400 text-xs overflow-y-auto z-[9999] p-3 pointer-events-none font-mono opacity-80">
+        <div className="font-bold text-white mb-2 border-b border-gray-600 pb-1">
+          🛠️ 실시간 처리 로그
+        </div>
+        {debugLog.length === 0 && (
+          <div className="text-gray-500">대기 중...</div>
+        )}
+        {debugLog.map((log, i) => (
+          <div key={i} className="mb-1 border-b border-gray-800 pb-1">
+            {log}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
