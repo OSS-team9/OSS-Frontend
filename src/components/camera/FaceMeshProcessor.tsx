@@ -239,8 +239,13 @@ export default function FaceMeshProcessor({
         setFaceLandmarker(lm);
         addLog("✅ FaceLandmarker 로드 완료");
 
+        addLog("☕️ 5초 대기 중... (메모리 정리 시간)");
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+
         ort.env.wasm.numThreads = 1;
         ort.env.wasm.simd = false;
+        ort.env.wasm.proxy = false;
+        addLog("🔄 ONNX 세션 생성 시도...");
         // 🚀 [최적화] iOS는 wasm, 나머지는 webgpu 우선
         const session = await ort.InferenceSession.create(
           "/models/mlp_v2_fp16.onnx",
