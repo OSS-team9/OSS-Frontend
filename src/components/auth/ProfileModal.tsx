@@ -3,6 +3,7 @@
 import { IoClose } from "react-icons/io5";
 import { useAuth } from "./AuthContext";
 import { GoogleLogin } from "@react-oauth/google";
+import { useEmotion } from "@/components/auth/EmotionContext";
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -11,12 +12,19 @@ interface ProfileModalProps {
 
 export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
   const { token, logout, login } = useAuth();
+  const { invalidateCache } = useEmotion();
 
   // 로그인 핸들러 (비로그인 상태일 때 사용)
   const handleLoginSuccess = async (credentialResponse: any) => {
     // ... (기존 로그인 로직 복사 또는 공통 함수로 분리 추천) ...
     // 편의상 여기선 생략하고 로그만 찍습니다.
     console.log("로그인 성공");
+  };
+
+  const handleLogout = () => {
+    invalidateCache(); // (1) 데이터 먼저 비우고
+    logout(); // (2) 토큰 삭제하고
+    onClose(); // (3) 모달 닫기
   };
 
   if (!isOpen) return null;
@@ -60,10 +68,7 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
               </div>
 
               <button
-                onClick={() => {
-                  logout();
-                  onClose();
-                }}
+                onClick={handleLogout}
                 className="w-full py-4 bg-red-50 text-red-600 font-bold rounded-2xl hover:bg-red-100 transition"
               >
                 로그아웃
