@@ -39,7 +39,7 @@ export default function GoogleLoginBtn({
           theme="filled_black" // 깔끔한 검정 테마
           shape="pill"
           text="signin_with"
-          width="300" // 너비를 꽉 채워서 보여줍니다.
+          width="280"
           // Android에서 공식 버튼이 안정적으로 작동하도록 설정
           useOneTap={false}
           ux_mode="popup"
