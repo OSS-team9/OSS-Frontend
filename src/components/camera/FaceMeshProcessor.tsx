@@ -238,11 +238,12 @@ export default function FaceMeshProcessor({
         });
         setFaceLandmarker(lm);
         addLog("✅ FaceLandmarker 로드 완료");
+
         ort.env.wasm.numThreads = 1;
         ort.env.wasm.simd = false;
         // 🚀 [최적화] iOS는 wasm, 나머지는 webgpu 우선
         const session = await ort.InferenceSession.create(
-          "/models/mlp_v2.onnx",
+          "/models/mlp_v2_fp16.onnx",
           {
             executionProviders: isIOS ? ["wasm"] : ["webgpu", "webgl", "wasm"],
           }
