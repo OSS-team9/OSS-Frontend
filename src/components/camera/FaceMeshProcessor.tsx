@@ -8,6 +8,11 @@ import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { useShareAndDownload } from "@/hooks/useShareAndDownload";
 import { getTodayDateString } from "@/utils/dateUtils";
 
+// ⭐️ [메모리 최적화] 전역 설정
+ort.env.wasm.numThreads = 1;
+ort.env.wasm.simd = false;
+ort.env.wasm.proxy = false;
+
 // ==================================================
 // 감정 라벨
 // ==================================================
@@ -171,11 +176,6 @@ export default function FaceMeshProcessor({
   isSaving = false,
 }: FaceMeshProcessorProps) {
   // 상태 관리
-  const [faceLandmarker, setFaceLandmarker] = useState<FaceLandmarker | null>(
-    null
-  );
-  const [emotionSession, setEmotionSession] =
-    useState<ort.InferenceSession | null>(null);
   const [scaler, setScaler] = useState<{
     mean: number[];
     scale: number[];
@@ -203,18 +203,13 @@ export default function FaceMeshProcessor({
   // 공유 훅 사용
   const { downloadImage } = useShareAndDownload();
 
-  // 1. 모델 로딩 (FaceMesh + ONNX + Scaler)
+  // 1. 초기 로딩: 오직 'Scaler' 데이터만 로드 (가벼움)
   useEffect(() => {
-    async function loadAll() {
+    async function loadScaler() {
       try {
-        // 🚀 [최적화] 아이폰/아이패드 감지
         const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-        addLog(
-          `📱 기기 감지: ${isIOS ? "iOS (아이폰/아이패드)" : "PC/Android"}`
-        );
-        addLog(
-          `⚡ 모드 설정: ${isIOS ? "CPU 모드 (안전)" : "GPU 모드 (고성능)"}`
-        );
+        addLog(`📱 기기: ${isIOS ? "iOS" : "PC/Android"}`);
+        addLog("⚡ 전략: 순차 실행 (메모리 절약)");
 
         const res = await fetch("/models/mlp_v2_scaler.json");
         const raw = await res.json();
@@ -222,57 +217,17 @@ export default function FaceMeshProcessor({
           mean: raw.mean_ || raw.mean,
           scale: raw.scale_ || raw.scale,
         });
-        addLog("✅ Scaler 로드 완료");
-
-        const resolver = await FilesetResolver.forVisionTasks(
-          "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
-        );
-
-        // 🚀 [최적화] iOS는 CPU, 나머지는 GPU 사용
-        const lm = await FaceLandmarker.createFromOptions(resolver, {
-          baseOptions: {
-            modelAssetPath: "/models/face_landmarker.task",
-            delegate: isIOS ? "CPU" : "GPU",
-          },
-          runningMode: "IMAGE",
-        });
-        setFaceLandmarker(lm);
-        addLog("✅ FaceLandmarker 로드 완료");
-
-        addLog("☕️ 5초 대기 중... (메모리 정리 시간)");
-        await new Promise((resolve) => setTimeout(resolve, 5000));
-
-        ort.env.wasm.numThreads = 1;
-        ort.env.wasm.simd = false;
-        ort.env.wasm.proxy = false;
-        addLog("🔄 ONNX 세션 생성 시도...");
-        // 🚀 [최적화] iOS는 wasm, 나머지는 webgpu 우선
-        const session = await ort.InferenceSession.create(
-          "/models/mlp_v2_fp16.onnx",
-          {
-            executionProviders: isIOS ? ["wasm"] : ["webgpu", "webgl", "wasm"],
-          }
-        );
-        setEmotionSession(session);
-        addLog("✅ ONNX Session 로드 완료");
+        addLog("✅ 설정 데이터 로드 완료");
       } catch (e) {
-        console.error("모델 로딩 실패:", e);
-        addLog(`🚨 모델 로딩 실패: ${e}`);
+        addLog(`🚨 설정 로드 실패: ${e}`);
       }
     }
-    loadAll();
+    loadScaler();
   }, []);
 
-  // 2. 이미지 처리 및 그리기 (Mock 제거 -> 실제 모델 연결)
+  // 2. 이미지 처리 프로세스 (여기에 모든 로직 집중)
   useEffect(() => {
-    if (
-      !faceLandmarker ||
-      !emotionSession ||
-      !scaler ||
-      !imageSrc ||
-      !canvasRef.current
-    )
-      return;
+    if (!scaler || !imageSrc || !canvasRef.current) return;
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
@@ -286,17 +241,9 @@ export default function FaceMeshProcessor({
     userImage.crossOrigin = "anonymous";
 
     userImage.onload = async () => {
-      addLog("🖼️ 이미지 로드됨. 그리기 시작...");
-
-      // 캔버스 크기 고정 (User Logic 유지)
-      const FIXED_WIDTH = 1440;
-      const FIXED_HEIGHT = 1920;
-      canvas.width = FIXED_WIDTH;
-      canvas.height = FIXED_HEIGHT;
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // (1) 원본 이미지 그리기 (User Logic 유지)
+      // 캔버스 초기화 및 그리기
+      canvas.width = 1440;
+      canvas.height = 1920;
       const canvasAspectRatio = canvas.width / canvas.height;
       const imageAspectRatio = userImage.naturalWidth / userImage.naturalHeight;
       let sx = 0,
@@ -322,63 +269,93 @@ export default function FaceMeshProcessor({
         canvas.width,
         canvas.height
       );
-      addLog("🖌️ 캔버스 그리기 완료");
 
-      // =========================================================
-      // 🚀 [수정 3] AI 분석용 '작은 캔버스' 생성 (iOS 렉 해결의 핵심)
-      // =========================================================
-      // 🚀 [최적화] 메인 스레드 차단 방지를 위한 setTimeout
+      if (isRunningRef.current) return;
+      isRunningRef.current = true;
+
+      // 🛑 핵심 로직: 단계별 로딩 -> 실행 -> 삭제
       setTimeout(async () => {
-        try {
-          addLog("🤖 AI 분석 준비 중...");
+        let landmarker: FaceLandmarker | null = null;
+        let session: ort.InferenceSession | null = null;
 
-          // 🚀 [최적화] 분석용 이미지 축소 (512px)
-          const ANALYSIS_WIDTH = 512;
+        try {
+          const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+          // -------------------------------------------------------
+          // [STEP 1] FaceMesh 로드 & 실행 & 삭제
+          // -------------------------------------------------------
+          addLog("1️⃣ FaceMesh 모델 로딩 중...");
+          const resolver = await FilesetResolver.forVisionTasks(
+            "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+          );
+          landmarker = await FaceLandmarker.createFromOptions(resolver, {
+            baseOptions: {
+              modelAssetPath: "/models/face_landmarker.task",
+              delegate: "CPU", // iOS 안정성
+            },
+            runningMode: "IMAGE",
+          });
+
+          // 이미지 축소 (256px)
+          const ANALYSIS_WIDTH = 256;
           const analysisScale = ANALYSIS_WIDTH / userImage.naturalWidth;
           const analysisHeight = userImage.naturalHeight * analysisScale;
-
           const smallCanvas = document.createElement("canvas");
           smallCanvas.width = ANALYSIS_WIDTH;
           smallCanvas.height = analysisHeight;
           const smallCtx = smallCanvas.getContext("2d", {
             willReadFrequently: true,
           });
-
           smallCtx?.drawImage(userImage, 0, 0, ANALYSIS_WIDTH, analysisHeight);
-          addLog(`📉 분석용 이미지 축소 완료 (${ANALYSIS_WIDTH}px)`);
 
-          // (1) FaceMesh 감지
-          addLog("⏳ FaceLandmarker 감지 시작...");
-          const startFace = performance.now();
-          const result = faceLandmarker.detect(smallCanvas); // 작은 이미지 사용
-          const endFace = performance.now();
-          addLog(`✅ 얼굴 감지 완료! (${Math.round(endFace - startFace)}ms)`);
+          addLog("📸 얼굴 감지 실행...");
+          const result = landmarker.detect(smallCanvas);
+
+          // 🗑️ [중요] FaceMesh 메모리 즉시 해제!
+          landmarker.close();
+          landmarker = null;
+          addLog("🗑️ FaceMesh 메모리 해제 완료");
 
           if (!result.faceLandmarks.length) {
-            addLog("❌ 얼굴을 찾을 수 없음");
+            addLog("❌ 얼굴 없음");
             setDetectionFailed(true);
             setIsDrawingComplete(true);
-            isRunningRef.current = false;
             return;
           }
-
           const lm = result.faceLandmarks[0];
 
-          // (2) ONNX 감정 분석
-          addLog("⏳ 감정 분석(ONNX) 시작...");
-          const startEmotion = performance.now();
+          // -------------------------------------------------------
+          // [STEP 2] 잠시 대기 (GC 시간 벌기)
+          // -------------------------------------------------------
+          // addLog("☕️ 메모리 정리 대기 (1초)...");
+          // await new Promise(r => setTimeout(r, 1000));
 
+          // -------------------------------------------------------
+          // [STEP 3] ONNX 로드 & 실행 & 삭제
+          // -------------------------------------------------------
+          addLog("2️⃣ 감정 모델(ONNX) 로딩 중...");
+
+          // 모델 경로 (경량화 모델 사용)
+          // const modelPath = isIOS ? "/models/mlp_v2_small.onnx" : "/models/mlp_v2.onnx";
+
+          session = await ort.InferenceSession.create("/models/mlp_v2.onnx", {
+            executionProviders: isIOS ? ["wasm"] : ["webgpu", "webgl", "wasm"],
+          });
+
+          addLog("🧠 감정 분석 실행...");
           const bbox = computeBBox(lm);
           const vec = landmarksToVec1434_CropNorm(lm, bbox);
-          const aiResult = await runEmotion(emotionSession, vec, scaler);
+          const aiResult = await runEmotion(session, vec, scaler);
 
-          const endEmotion = performance.now();
-          addLog(
-            `✅ 감정 분석 완료! (${Math.round(endEmotion - startEmotion)}ms)`
-          );
-          addLog(`👉 결과: ${aiResult.emotion} (Lv.${aiResult.level})`);
+          // 🗑️ [중요] ONNX 메모리 해제 (변수 초기화)
+          session = null;
+          addLog("🗑️ ONNX 메모리 해제 완료");
 
-          // (3) 아이콘 그리기
+          addLog(`🎉 결과: ${aiResult.emotion}`);
+
+          // -------------------------------------------------------
+          // [STEP 4] 결과 그리기
+          // -------------------------------------------------------
           const iconToDraw = new Image();
           iconToDraw.src = `/images/emotions/${aiResult.emotion}_${aiResult.level}.png`;
           await new Promise((resolve) => (iconToDraw.onload = resolve));
@@ -404,23 +381,23 @@ export default function FaceMeshProcessor({
 
           setIsDrawingComplete(true);
 
-          // (4) 결과 이미지 생성
-          addLog("💾 결과 이미지 변환 중...");
-          const finalImage = canvas.toDataURL("image/png");
-          addLog("🎉 모든 과정 완료!");
-
+          // 최종 결과 생성
+          const finalImage = canvas.toDataURL("image/jpeg", 0.7);
           if (onAnalysisComplete) {
             onAnalysisComplete(aiResult.emotion, aiResult.level, finalImage);
           }
         } catch (error) {
-          console.error("AI 처리 중 오류 발생:", error);
-          addLog(`🚨 에러 발생: ${error}`);
+          console.error(error);
+          addLog(`🚨 에러: ${error}`);
         } finally {
+          // 안전장치: 혹시 에러나서 안 닫혔을 경우를 대비
+          if (landmarker) (landmarker as FaceLandmarker).close();
+          session = null;
           isRunningRef.current = false;
         }
-      }, 50); // 0.05초 딜레이
+      }, 100); // UI 렌더링 후 시작
     };
-  }, [faceLandmarker, emotionSession, scaler, imageSrc]); // 의존성 배열 업데이트
+  }, [scaler, imageSrc]); // 의존성 배열에서 모델 제거됨
 
   // 공유하기 핸들러
   const handleShare = async () => {
@@ -463,7 +440,7 @@ export default function FaceMeshProcessor({
     <div className="w-full h-full">
       <div className="w-full p-4 bg-app-bg-secondary">
         <Card className="mobile-container bg-gray-200 relative">
-          {(!faceLandmarker || !emotionSession || !scaler) && (
+          {!scaler && (
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ">
               <LoadingSpinner />
             </div>
