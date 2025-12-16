@@ -48,6 +48,8 @@ function HousePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(!isHouseFetched); // 캐시 없으면 로딩 시작
 
+  // 애니메이션 상태
+  const [isPulsing, setIsPulsing] = useState(false);
   // ⭐️ 캔버스 참조 생성 (합성용)
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -131,6 +133,16 @@ function HousePage() {
     } else {
       setPlacedEmotion(item);
     }
+  };
+  // 캐릭터 클릭 시 애니메이션 실행 함수
+  const handleCharacterClick = () => {
+    if (!placedEmotion) return; // 1. 애니메이션 실행
+    if (isPulsing) return;
+    setIsPulsing(true); // 2. 300ms 후에 애니메이션 상태를 false로 되돌림
+
+    setTimeout(() => {
+      setIsPulsing(false);
+    }, 300);
   };
 
   // 3. 저장 핸들러 (저장 후 캐시도 업데이트)
@@ -327,9 +339,19 @@ function HousePage() {
                 }
               )}
 
-            {/* 2. ⭐️ 배치된 스티커 (X 버튼 제거됨) */}
+            {/* 2. ⭐️ 배치된 스티커 */}
             {placedEmotion && (
-              <div className="absolute bottom-[5%] left-1/2 -translate-x-1/2 w-60 h-60 animate-bounce-slow z-10">
+              <div
+                onClick={handleCharacterClick}
+                className={`
+                  absolute bottom-[5%] left-1/2 -translate-x-1/2 w-60 h-60 
+                  animate-bounce-slow z-10 
+                  cursor-pointer
+                  // ⭐️ [핵심] 애니메이션 클래스 적용
+                  transition-transform duration-300 ease-out transform 
+                  ${isPulsing ? "scale-[1.05]" : "scale-100"} 
+                `}
+              >
                 <Image
                   src={`/images/emotions/${placedEmotion.emotion}_${placedEmotion.level}.png`}
                   alt="Placed Sticker"
