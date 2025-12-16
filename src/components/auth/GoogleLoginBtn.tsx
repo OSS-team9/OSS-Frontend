@@ -47,18 +47,18 @@ export default function GoogleLoginBtn({
 
       {/* 3. 👻 실제 기능: 투명한 공식 버튼 (위로 덮어씌움) */}
       <div className="absolute inset-0 opacity-0 z-10 overflow-hidden rounded-full">
-        <GoogleLogin
-          onSuccess={onSuccess}
-          onError={() => {
-            console.error("Login Failed");
-            if (onError) onError();
-          }}
-          width="320" // 버튼 너비만큼 꽉 채우기
-          size="large"
-          text="continue_with"
-          useOneTap={false}
-          ux_mode="popup"
-        />
+        <div className="w-full h-full">
+          <GoogleLogin
+            onSuccess={onSuccess}
+            onError={() => {
+              console.error("Login Failed");
+              if (onError) onError();
+            }}
+            size="large"
+            useOneTap={false}
+            ux_mode="popup"
+          />
+        </div>
       </div>
     </div>
   );
