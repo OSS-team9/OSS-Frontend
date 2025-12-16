@@ -56,6 +56,8 @@ export default function GoogleLoginBtn({
           width="320" // 버튼 너비만큼 꽉 채우기
           size="large"
           text="continue_with"
+          useOneTap={false}
+          ux_mode="popup"
         />
       </div>
     </div>
