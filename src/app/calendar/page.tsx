@@ -10,6 +10,7 @@ import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { EmotionLog } from "@/types";
 import { toEnglishEmotion } from "@/utils/emotionUtils";
 import MonthlyEmotionChart from "@/components/dashboard/MonthlyEmotionChart";
+import MonthlyEmotionComment from "@/components/dashboard/MonthlyEmotionComment";
 
 function CalendarPage() {
   const router = useRouter();
@@ -103,6 +104,7 @@ function CalendarPage() {
             currentDate={currentDate}
             onDateChange={setCurrentDate}
           />
+          <MonthlyEmotionComment logs={logs} />
           {/* 2. ⭐️ 이번 달 감정 차트 (여기에 추가!) */}
           <MonthlyEmotionChart logs={logs} />
         </div>
