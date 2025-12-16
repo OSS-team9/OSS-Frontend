@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { FaceLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
-import * as ort from "onnxruntime-web"; // ONNX Runtime 추가
+import * as ort from "onnxruntime-web";
 import Card from "@/components/common/BorderCard";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { useShareAndDownload } from "@/hooks/useShareAndDownload";
@@ -22,7 +22,7 @@ const EMOTIONS = [
 ];
 
 // ==================================================
-// 아이콘 배치 설정 (User Original)
+// 아이콘 배치 설정 (원본 그대로)
 // ==================================================
 const ICON_PLACEMENTS = [
   {
@@ -62,7 +62,7 @@ function softmax(arr: number[]) {
 }
 
 // ==================================================
-// 얼굴 Bounding Box 계산 (전체 이미지 기준)
+// 얼굴 Bounding Box 계산
 // ==================================================
 function computeBBox(lm: any[]) {
   let minX = 1,
@@ -95,12 +95,9 @@ function landmarksToVec1434_CropNorm(
 ): Float32Array {
   const out = new Float32Array(1434);
   for (let i = 0; i < 478; i++) {
-    const nx = (lm[i].x - bbox.x) / bbox.w;
-    const ny = (lm[i].y - bbox.y) / bbox.h;
-    const nz = lm[i].z / bbox.w;
-    out[i * 3 + 0] = nx;
-    out[i * 3 + 1] = ny;
-    out[i * 3 + 2] = nz;
+    out[i * 3 + 0] = (lm[i].x - bbox.x) / bbox.w;
+    out[i * 3 + 1] = (lm[i].y - bbox.y) / bbox.h;
+    out[i * 3 + 2] = lm[i].z / bbox.w;
   }
   return out;
 }
@@ -117,34 +114,43 @@ function normalize(vec: Float32Array, mean: number[], scale: number[]) {
 }
 
 // ==================================================
-// ONNX 감정 추론 (최종 안정 버전)
+// ONNX 감정 추론 (level 1~3 안정 분포)
 // ==================================================
 async function runEmotion(
   session: ort.InferenceSession,
   vec1434: Float32Array,
   scaler: { mean: number[]; scale: number[] }
 ) {
-  // normalize
   const norm = normalize(vec1434, scaler.mean, scaler.scale);
-
-  // tensor
   const inputTensor = new ort.Tensor("float32", norm, [1, 1434]);
 
-  // 정확한 input/output 이름
-  const inputName = session.inputNames[0]; // "input"
-  const outputName = session.outputNames[0]; // "keras_tensor_44"
+  const output = await session.run({
+    [session.inputNames[0]]: inputTensor,
+  });
 
-  const output = await session.run({ [inputName]: inputTensor });
-  const raw = Array.from(output[outputName].data as Float32Array);
+  const raw = Array.from(
+    output[session.outputNames[0]].data as Float32Array
+  );
 
   const probs = softmax(raw);
   const idx = probs.indexOf(Math.max(...probs));
 
+  // 🔥 level 판단은 logit 기반
+  const logit = raw[idx];
+
+  let level = 1;
+  if (logit > 1.2) level = 3;
+  else if (logit > 0.6) level = 2;
+
   return {
     emotion: EMOTIONS[idx],
-    level: Math.floor(probs[idx] * 3) + 1,
+    level,
+    raw,
+    probs,
+    idx
   };
 }
+
 
 // ==================================================
 // MAIN COMPONENT
@@ -170,10 +176,8 @@ export default function FaceMeshProcessor({
   isLoggedIn,
   isSaving = false,
 }: FaceMeshProcessorProps) {
-  // 상태 관리
-  const [faceLandmarker, setFaceLandmarker] = useState<FaceLandmarker | null>(
-    null
-  );
+  const [faceLandmarker, setFaceLandmarker] =
+    useState<FaceLandmarker | null>(null);
   const [emotionSession, setEmotionSession] =
     useState<ort.InferenceSession | null>(null);
   const [scaler, setScaler] = useState<{
@@ -185,59 +189,54 @@ export default function FaceMeshProcessor({
   const [isDrawingComplete, setIsDrawingComplete] = useState(false);
 
   const isRunningRef = useRef(false);
-
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // 공유 훅 사용
   const { downloadImage } = useShareAndDownload();
 
-  // 1. 모델 로딩 (FaceMesh + ONNX + Scaler)
+  // ==================================================
+  // 모델 로딩
+  // ==================================================
   useEffect(() => {
     async function loadAll() {
-      try {
-        // (1) OS 감지: 아이폰/아이패드인지 확인
-        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-        // Scaler 로드
-        const res = await fetch("/models/mlp_v2_scaler.json");
-        const raw = await res.json();
-        setScaler({
-          mean: raw.mean_ || raw.mean,
-          scale: raw.scale_ || raw.scale,
-        });
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-        // FaceLandmarker 로드
-        const resolver = await FilesetResolver.forVisionTasks(
-          "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
-        );
-        const lm = await FaceLandmarker.createFromOptions(resolver, {
-          baseOptions: {
-            modelAssetPath: "/models/face_landmarker.task",
-            delegate: isIOS ? "CPU" : "GPU",
-          },
-          runningMode: "IMAGE",
-        });
-        setFaceLandmarker(lm);
+      const scalerRes = await fetch("/models/mlp_v2_scaler.json");
+      const scalerRaw = await scalerRes.json();
+      setScaler({
+        mean: scalerRaw.mean_ || scalerRaw.mean,
+        scale: scalerRaw.scale_ || scalerRaw.scale,
+      });
 
-        // ONNX Session 로드
-        const session = await ort.InferenceSession.create(
-          "/models/mlp_v2.onnx",
-          {
-            executionProviders: isIOS
-              ? ["wasm"] // iOS: CPU만 사용
-              : ["webgpu", "webgl", "wasm"], // 그 외: GPU 우선, 안되면 CPU
-          }
-        );
-        setEmotionSession(session);
+      const resolver = await FilesetResolver.forVisionTasks(
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+      );
 
-        console.log("모든 AI 모델 로드 완료");
-      } catch (e) {
-        console.error("모델 로딩 실패:", e);
-      }
+      const lm = await FaceLandmarker.createFromOptions(resolver, {
+        baseOptions: {
+          modelAssetPath: "/models/face_landmarker.task",
+          delegate: isIOS ? "CPU" : "GPU",
+        },
+        runningMode: "IMAGE",
+      });
+      setFaceLandmarker(lm);
+
+      const session = await ort.InferenceSession.create(
+        "/models/mlp_v2_fp16.onnx",
+        {
+          executionProviders: isIOS
+            ? ["wasm"]
+            : ["webgpu", "webgl", "wasm"],
+        }
+      );
+      setEmotionSession(session);
     }
+
     loadAll();
   }, []);
 
-  // 2. 이미지 처리 및 그리기 (Mock 제거 -> 실제 모델 연결)
+  // ==================================================
+  // 이미지 처리
+  // ==================================================
   useEffect(() => {
     if (
       !faceLandmarker ||
@@ -252,69 +251,31 @@ export default function FaceMeshProcessor({
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
-    setIsDrawingComplete(false);
     setDetectionFailed(false);
+    setIsDrawingComplete(false);
 
     const userImage = new Image();
     userImage.src = imageSrc;
     userImage.crossOrigin = "anonymous";
 
     userImage.onload = async () => {
-      // 캔버스 크기 고정 (User Logic 유지)
       const FIXED_WIDTH = 1440;
       const FIXED_HEIGHT = 1920;
       canvas.width = FIXED_WIDTH;
       canvas.height = FIXED_HEIGHT;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // (1) 원본 이미지 그리기 (User Logic 유지)
-      const canvasAspectRatio = canvas.width / canvas.height;
-      const imageAspectRatio = userImage.naturalWidth / userImage.naturalHeight;
-      let sx = 0,
-        sy = 0,
-        sWidth = userImage.naturalWidth,
-        sHeight = userImage.naturalHeight;
-
-      if (imageAspectRatio > canvasAspectRatio) {
-        sWidth = userImage.naturalHeight * canvasAspectRatio;
-        sx = (userImage.naturalWidth - sWidth) / 2;
-      } else {
-        sHeight = userImage.naturalWidth / canvasAspectRatio;
-        sy = (userImage.naturalHeight - sHeight) / 2;
-      }
-      ctx.drawImage(
-        userImage,
-        sx,
-        sy,
-        sWidth,
-        sHeight,
-        0,
-        0,
-        canvas.width,
-        canvas.height
-      );
-
-      // =========================================================
-      // 🚀 [수정 3] AI 분석용 '작은 캔버스' 생성 (iOS 렉 해결의 핵심)
-      // =========================================================
-      const ANALYSIS_WIDTH = 512; // 512px로 축소
-      const analysisScale = ANALYSIS_WIDTH / userImage.naturalWidth;
-      const analysisHeight = userImage.naturalHeight * analysisScale;
+      ctx.drawImage(userImage, 0, 0, canvas.width, canvas.height);
 
       const smallCanvas = document.createElement("canvas");
-      smallCanvas.width = ANALYSIS_WIDTH;
-      smallCanvas.height = analysisHeight;
-      const smallCtx = smallCanvas.getContext("2d", {
-        willReadFrequently: true,
-      });
+      smallCanvas.width = 512;
+      smallCanvas.height =
+        (userImage.naturalHeight / userImage.naturalWidth) * 512;
+      smallCanvas
+        .getContext("2d")!
+        .drawImage(userImage, 0, 0, smallCanvas.width, smallCanvas.height);
 
-      // 이미지를 작게 그려서 메모리에 올림
-      smallCtx?.drawImage(userImage, 0, 0, ANALYSIS_WIDTH, analysisHeight);
-
-      // (2) FaceMesh 감지 : 원본(userImage) 대신 👉 작게 줄인(smallCanvas)를 넣습니다.
       const result = faceLandmarker.detect(smallCanvas);
-      // =========================================================
 
       if (!result.faceLandmarks.length) {
         setDetectionFailed(true);
@@ -322,94 +283,79 @@ export default function FaceMeshProcessor({
         return;
       }
 
-      const lm = result.faceLandmarks[0];
-
       if (isRunningRef.current) return;
+      isRunningRef.current = true;
 
       try {
-        isRunningRef.current = true;
+        const lm = result.faceLandmarks[0];
+        const vec = landmarksToVec1434_CropNorm(lm, computeBBox(lm));
+        const ai = await runEmotion(emotionSession, vec, scaler);
+        console.log("Emotion:", ai.emotion);
+        console.log("Level:", ai.level);
+        console.log("Raw logits:", ai.raw);
+        console.log("Softmax probs:", ai.probs);
+        console.log("Top prob:", ai.probs[ai.idx]);
 
-        // (3) ONNX 모델 추론 실행
-        const bbox = computeBBox(lm);
-        const vec = landmarksToVec1434_CropNorm(lm, bbox);
 
-        // 실제 AI 추론 (여기서 시간 걸림)
-        const aiResult = await runEmotion(emotionSession, vec, scaler);
-        console.log("AI 추론 결과:", aiResult);
+        const icon = new Image();
+        icon.src = `/images/emotions/${ai.emotion}_${ai.level}.png`;
+        await new Promise((r) => (icon.onload = r));
 
-        // (4) 아이콘 그리기
-        const iconToDraw = new Image();
-        iconToDraw.src = `/images/emotions/${aiResult.emotion}_${aiResult.level}.png`;
-        await new Promise((resolve) => (iconToDraw.onload = resolve));
-
-        const scaledLandmarks = lm.map((landmark) => {
-          const originalX = landmark.x * userImage.naturalWidth;
-          const originalY = landmark.y * userImage.naturalHeight;
-          const canvasX = ((originalX - sx) / sWidth) * canvas.width;
-          const canvasY = ((originalY - sy) / sHeight) * canvas.height;
-          return {
-            x: canvasX / canvas.width,
-            y: canvasY / canvas.height,
-            z: landmark.z,
-          };
-        });
-
-        ICON_PLACEMENTS.forEach((placement) => {
-          const landmark = scaledLandmarks[placement.landmarkIndex];
-          const x = landmark.x * canvas.width + placement.offsetX;
-          const y = landmark.y * canvas.height + placement.offsetY;
-          ctx.drawImage(iconToDraw, x, y, placement.width, placement.height);
+        ICON_PLACEMENTS.forEach((p) => {
+          const pt = lm[p.landmarkIndex];
+          ctx.drawImage(
+            icon,
+            pt.x * canvas.width + p.offsetX,
+            pt.y * canvas.height + p.offsetY,
+            p.width,
+            p.height
+          );
         });
 
         setIsDrawingComplete(true);
-        const finalImage = canvas.toDataURL("image/png");
-
-        if (onAnalysisComplete) {
-          onAnalysisComplete(aiResult.emotion, aiResult.level, finalImage);
-        }
-      } catch (error) {
-        console.error("AI 처리 중 오류 발생:", error);
+        onAnalysisComplete?.(
+          ai.emotion,
+          ai.level,
+          canvas.toDataURL("image/png")
+        );
       } finally {
         isRunningRef.current = false;
       }
     };
-  }, [faceLandmarker, emotionSession, scaler, imageSrc]); // 의존성 배열 업데이트
+  }, [faceLandmarker, emotionSession, scaler, imageSrc]);
 
-  // 공유하기 핸들러
+  // ==================================================
+  // UI (원본 그대로)
+  // ==================================================
   const handleShare = async () => {
     if (!canvasRef.current || !isDrawingComplete) return;
     const dateStr = getTodayDateString();
-    try {
-      const canvas = canvasRef.current;
-      const blob = await new Promise<Blob | null>((resolve) =>
-        canvas.toBlob(resolve, "image/png")
-      );
-      if (!blob) return alert("이미지 생성 실패");
+    const canvas = canvasRef.current;
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/png")
+    );
+    if (!blob) return;
 
-      const filename = `today-haru_${dateStr}.png`;
-      const file = new File([blob], filename, {
-        type: "image/png",
+    const file = new File([blob], `today-haru_${dateStr}.png`, {
+      type: "image/png",
+    });
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        files: [file],
+        title: "오늘:하루 감정 분석",
+        text: "내 감정 분석 결과를 확인해보세요!",
       });
-
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: "오늘:하루 감정 분석",
-          text: "내 감정 분석 결과를 확인해보세요!",
-        });
-      } else {
-        alert("이 브라우저는 공유를 지원하지 않습니다.");
-      }
-    } catch (error) {
-      console.log("공유 취소됨");
     }
   };
 
   const handleDownload = () => {
     if (!canvasRef.current) return;
     const dateStr = getTodayDateString();
-    const url = canvasRef.current.toDataURL("image/png");
-    downloadImage(url, `today-haru_${dateStr}.png`);
+    downloadImage(
+      canvasRef.current.toDataURL("image/png"),
+      `today-haru_${dateStr}.png`
+    );
   };
 
   return (
@@ -417,7 +363,7 @@ export default function FaceMeshProcessor({
       <div className="w-full p-4 bg-app-bg-secondary">
         <Card className="mobile-container bg-gray-200 relative">
           {(!faceLandmarker || !emotionSession || !scaler) && (
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
               <LoadingSpinner />
             </div>
           )}
