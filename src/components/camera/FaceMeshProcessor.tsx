@@ -195,6 +195,8 @@ export default function FaceMeshProcessor({
   useEffect(() => {
     async function loadAll() {
       try {
+        // (1) OS 감지: 아이폰/아이패드인지 확인
+        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
         // Scaler 로드
         const res = await fetch("/models/mlp_v2_scaler.json");
         const raw = await res.json();
@@ -210,7 +212,7 @@ export default function FaceMeshProcessor({
         const lm = await FaceLandmarker.createFromOptions(resolver, {
           baseOptions: {
             modelAssetPath: "/models/face_landmarker.task",
-            delegate: "GPU",
+            delegate: isIOS ? "CPU" : "GPU",
           },
           runningMode: "IMAGE",
         });
@@ -220,7 +222,9 @@ export default function FaceMeshProcessor({
         const session = await ort.InferenceSession.create(
           "/models/mlp_v2.onnx",
           {
-            executionProviders: ["webgpu", "wasm"],
+            executionProviders: isIOS
+              ? ["wasm"] // iOS: CPU만 사용
+              : ["webgpu", "webgl", "wasm"], // 그 외: GPU 우선, 안되면 CPU
           }
         );
         setEmotionSession(session);
